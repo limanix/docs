@@ -1,0 +1,10 @@
+/* Center direct buttons and dropdown controls on the same axis. */
+.bd-header-article .article-header-buttons {
+    align-items: center;
+}
+
+.bd-header-article .article-header-buttons > .btn > .btn__icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

@@ -1,0 +1,20 @@
+# Local environment and private VM configurations
+/vm/
+.env
+.env.*
+
+# Python files
+__pycache__/
+/build/
+/.venv/
+
+# Task runner cache
+/.cache/
+/.task/
+
+# IDE
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
