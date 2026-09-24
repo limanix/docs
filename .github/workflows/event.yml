@@ -1,0 +1,54 @@
+name: Client documentation
+
+on:
+  repository_dispatch:
+    types: [limanix-client-release]
+
+concurrency:
+  group: docs-release
+  queue: max
+
+permissions:
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-24.04
+    outputs:
+      releases: ${{ steps.versions.outputs.releases }}
+    steps:
+      - name: Validate released versions
+        id: versions
+        run: |
+          set -euo pipefail
+          releases=$(jq -ce '
+            .client_payload.releases |
+            if type == "array" and length > 0 and all(.[];
+              type == "object" and keys == ["client_tag", "modules_tag"] and
+              (.client_tag | type == "string" and test("^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(\\+[1-9][0-9]*)?\\z")) and
+              (.modules_tag | type == "string" and test("^v[1-9][0-9]*\\z"))
+            ) then unique else error("Expected published client and module tag pairs") end |
+            if any(group_by(.client_tag)[]; length != 1)
+            then error("Conflicting module versions for a client release") else . end
+          ' "$GITHUB_EVENT_PATH")
+          printf 'releases=%s\n' "$releases" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.client_tag }} with modules ${{ matrix.modules_tag }}
+    needs: select
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.select.outputs.releases) }}
+    uses: ./.github/workflows/build-docs.yml
+    with:
+      client-tag: ${{ matrix.client_tag }}
+      modules-tag: ${{ matrix.modules_tag }}
+      artifact-name: docs-client-${{ matrix.client_tag }}
+
+  publish:
+    needs: build
+    uses: ./.github/workflows/publish-client-docs.yml
+    permissions:
+      contents: read
+      id-token: write

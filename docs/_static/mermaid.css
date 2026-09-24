@@ -1,0 +1,10 @@
+/* Mermaid handles its own theme; avoid the parent theme's second inversion. */
+html[data-theme="dark"] pre.mermaid > svg {
+    filter: none;
+}
+
+pre.mermaid {
+    background: transparent;
+    border: 0;
+    padding: 0;
+}

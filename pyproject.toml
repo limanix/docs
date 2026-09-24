@@ -1,0 +1,16 @@
+[project]
+name = "limanix-docs"
+version = "0.0.0"
+
+description = "LimaNix documentation website."
+requires-python = ">=3.14,<3.15"
+dependencies = []
+
+[dependency-groups]
+docs = [
+    "sphinxcontrib-mermaid==2.1.1",
+    "sphinx-autobuild==2025.8.25",
+    "sphinx-book-theme==1.4.0",
+    "myst-parser==5.1.0",
+    "sphinx==9.1.0",
+]

@@ -1,0 +1,36 @@
+# Local environment and private VM configurations
+/vm/
+.env
+.env.*
+
+# Python files
+__pycache__/
+/build/
+/.venv/
+
+# Documentation mount points
+/docs/pages/projects/
+
+# Task runner cache
+/.cache/
+/.task/
+
+# Terraform
+/tf/**/terraform.tfstate.d/
+/tf/**/.terraform/
+/tf/**/tfplan
+/tf/**/*.tfplan
+/tf/**/*.tfvars
+/tf/**/*.tfstate
+/tf/**/*.tfstate.*
+/tf/**/*.tfvars.json
+!/tf/**/*.tfvars.example
+!/tf/**/.terraform.lock.hcl
+/tf/**/.terraform.tfstate.lock.info
+
+# IDE
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
