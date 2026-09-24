@@ -18,7 +18,7 @@ locals {
 
   tags = {
     ManagedBy  = "Terraform"
-    Project    = "limanix-docs"
+    Project    = "limanix"
     Repository = "limanix/docs"
   }
 }

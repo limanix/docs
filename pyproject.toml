@@ -2,7 +2,7 @@
 name = "limanix-docs"
 version = "0.0.0"
 
-description = "Limanix documentation website."
+description = "LimaNix documentation website."
 requires-python = ">=3.14,<3.15"
 dependencies = []
 

@@ -1,0 +1,50 @@
+name: Release flow
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+concurrency:
+  group: docs-release
+  queue: max
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check release tag
+        uses: mr-chelyshkin/actions/check-tag-format@v1
+        with:
+          pattern: '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+
+  build:
+    needs: verify
+    uses: ./.github/workflows/build-docs.yml
+    with:
+      artifact-name: docs-${{ github.sha }}
+
+  deploy:
+    needs: build
+    uses: mr-chelyshkin/actions/.github/workflows/tag-aws-s3-static-release.yml@v1
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      artifact-name: docs-${{ github.sha }}
+      immutable-assets: false
+      terraform-version: '1.15.9'
+      terraform-workdir: tf
+      aws-region: ${{ vars.AWS_REGION }}
+      terraform-state-bucket: ${{ vars.TF_STATE_BUCKET }}
+      terraform-state-key: ${{ vars.TF_STATE_KEY }}
+      terraform-state-region: ${{ vars.TF_STATE_REGION }}
+      terraform-role-arn: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
+      domain-name: ${{ vars.SITE_DOMAIN_NAME }}
+      site-bucket-name: ${{ vars.SITE_BUCKET_NAME }}
+      acm-certificate-arn: ${{ vars.SITE_ACM_CERTIFICATE_ARN }}

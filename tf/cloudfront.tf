@@ -146,8 +146,9 @@ resource "aws_cloudfront_distribution" "site" {
 
 resource "aws_cloudfront_function" "docs_uri_rewrite" {
   name    = "${local.cloudfront_name_prefix}-uri-rewrite"
-  runtime = "cloudfront-js-2.0"
   comment = "Resolve limanix docs directory URLs to their S3 objects"
+  runtime = "cloudfront-js-2.0"
+
   code    = file("${path.module}/functions/uri-rewrite.js")
   publish = true
 }

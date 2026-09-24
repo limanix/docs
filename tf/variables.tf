@@ -1,11 +1,11 @@
 variable "aws_region" {
-  description = "AWS region for the documentation bucket."
+  description = "AWS region for bucket."
   type        = string
   nullable    = false
 }
 
 variable "domain_name" {
-  description = "Documentation hostname."
+  description = "Hostname."
   type        = string
   nullable    = false
 }
@@ -17,7 +17,7 @@ variable "site_bucket_name" {
 }
 
 variable "acm_certificate_arn" {
-  description = "ARN of an issued ACM certificate in us-east-1 covering domain_name."
+  description = "ARN of an issued ACM certificate."
   type        = string
   nullable    = false
 }

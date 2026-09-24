@@ -1,0 +1,105 @@
+name: Build documentation
+
+on:
+  workflow_call:
+    inputs:
+      client-tag:
+        description: Client release to include. Empty builds internal documentation.
+        type: string
+        default: ''
+      modules-tag:
+        description: Module release bundled with the client.
+        type: string
+        default: ''
+      artifact-name:
+        description: Artifact to upload. Empty skips the upload.
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      CLIENT_TAG: ${{ inputs.client-tag }}
+      MODULES_TAG: ${{ inputs.modules-tag }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Verify published releases
+        if: inputs.client-tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/limanix/client/releases/tags/$CLIENT_TAG" |
+            jq -e '.draft == false and .prerelease == false' > /dev/null
+          gh api "repos/limanix/modules/releases/tags/$MODULES_TAG" |
+            jq -e '.draft == false and .prerelease == false' > /dev/null
+
+      - name: Checkout client release
+        if: inputs.client-tag != ''
+        uses: actions/checkout@v6
+        with:
+          repository: limanix/client
+          ref: refs/tags/${{ inputs.client-tag }}
+          path: build/sources/client
+          persist-credentials: false
+
+      - name: Checkout module release
+        if: inputs.client-tag != ''
+        uses: actions/checkout@v6
+        with:
+          repository: limanix/modules
+          ref: refs/tags/${{ inputs.modules-tag }}
+          path: build/sources/modules
+          persist-credentials: false
+
+      - name: Generate release references
+        if: inputs.client-tag != ''
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          directory: build/sources/client
+          command: docs/generate RELEASE_TAG=${{ inputs.client-tag }} modules_version=${{ inputs.modules-tag }}
+
+      - name: Check generated version
+        if: inputs.client-tag != ''
+        run: |
+          jq -e --arg tag "$CLIENT_TAG" '.version == $tag' \
+            build/sources/client/docs/_generated/metadata.json > /dev/null
+
+      - name: Build internal documentation
+        if: inputs.client-tag == ''
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ci/docs
+
+      - name: Build client documentation
+        if: inputs.client-tag != ''
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: >-
+            ci/docs DOCS='build/sources/client build/sources/modules'
+            DOCS_OUTPUT='build/docs/${{ inputs.client-tag }}'
+
+      - name: Record release versions
+        if: inputs.client-tag != ''
+        run: |
+          jq -n --arg client_tag "$CLIENT_TAG" --arg modules_tag "$MODULES_TAG" \
+            '{client_tag: $client_tag, modules_tag: $modules_tag}' \
+            > "build/docs/$CLIENT_TAG/release.json"
+
+      - name: Upload documentation
+        if: inputs.artifact-name != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: build/docs
+          if-no-files-found: error
+          overwrite: true

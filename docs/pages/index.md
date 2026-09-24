@@ -1,4 +1,4 @@
-# Limanix
+# LimaNix
 
 Linux development environments on macOS, configured with TOML and NixOS modules.
 
@@ -14,11 +14,11 @@ the guest system.
 
 ## Project repositories
 
-- [Client](https://github.com/limanix/client) — the Limanix command-line application.
-- [Modules](https://github.com/limanix/modules) — the standard NixOS module catalog.
-- [Documentation](https://github.com/limanix/docs) — this website.
+- [Client](https://github.com/limanix/client) - the Limanix command-line application.
+- [Modules](https://github.com/limanix/modules) - the standard NixOS module catalog.
+- [Documentation](https://github.com/limanix/docs) - this website.
 
-## Maintaining Limanix
+## Maintaining LimaNix
 
 The [release process](releases/index.md) explains how module releases reach
 supported clients and how their documentation is published.
@@ -27,6 +27,7 @@ supported clients and how their documentation is published.
 :hidden:
 :maxdepth: 2
 :caption: Project
+:glob:
 
-releases/index
+**/index
 ```

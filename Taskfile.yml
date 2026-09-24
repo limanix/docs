@@ -32,50 +32,52 @@ tasks:
       - task: terraform:plan
         vars:
           INIT_ARGS: >-
-            -input=false -reconfigure -lockfile=readonly
-            -backend-config=use_lockfile=true
-            -backend-config=encrypt=true
             {{printf "-backend-config=bucket=%s" .TF_STATE_BUCKET | shellQuote}}
             {{printf "-backend-config=region=%s" .TF_STATE_REGION | shellQuote}}
             {{printf "-backend-config=key=%s" .TF_STATE_KEY | shellQuote}}
-
-  docs/serve:
-    desc: Serve docs locally
+            -input=false -reconfigure -lockfile=readonly
+            -backend-config=use_lockfile=true
+            -backend-config=encrypt=true
+            
+  ci/docs:
+    desc: Build static
     vars:
-      docs_port: '{{.DOCS_PORT | default "8050"}}'
       docs_projects: '{{.DOCS | default ""}}'
-    preconditions:
+      docs_output: '{{.DOCS_OUTPUT | default "build/docs"}}'
+    preconditions: &docs_preconditions
       - sh: |
           {{range (.docs_projects | splitArgs)}}
-          {{- $path := . -}}
-          {{- if not (isAbs $path) -}}{{- $path = joinPath $.ROOT_DIR $path | absPath -}}{{- end}}
-          test -f {{printf "%s/docs/index.md" $path | shellQuote}} || exit 1
+          test -f {{joinPath . "docs/index.md" | shellQuote}} || exit 1
           {{end}}
           true
         msg: Each DOCS directory must contain docs/index.md.
     cmds:
       - task: python:_uv/tool
         vars:
-          CONTAINER_PORTS: '127.0.0.1:{{.docs_port}}:{{.docs_port}}'
-          CONTAINER_ENVS: PYTHONUNBUFFERED=1 TINI_KILL_PROCESS_GROUP=1
-          CONTAINER_VOLUMES: >-
-            {{range $index, $path := (.docs_projects | splitArgs)}}
-            {{if not (isAbs $path)}}{{$path = joinPath $.ROOT_DIR $path | absPath}}{{end}}
-            {{printf "%s:/local-projects/%d:ro" $path $index | shellQuote}}
+          CONTAINER_ENVS: CLIENT_TAG MODULES_TAG
+          CONTAINER_VOLUMES: &docs_volumes >-
+            {{range $project := (.docs_projects | splitArgs)}}
+            {{if not (isAbs $project)}}{{$project = joinPath $.ROOT_DIR $project | absPath}}{{end}}
+            {{printf "%s/docs:/workspace/docs/pages/projects/%s:ro" $project (base $project) | shellQuote}}
             {{end}}
           CMD: >-
-            uv run --locked --group docs python docs/preview.py
-            --port {{.docs_port | shellQuote}}
-            {{range $index, $path := (.docs_projects | splitArgs)}}
-            {{if not (isAbs $path)}}{{$path = joinPath $.ROOT_DIR $path | absPath}}{{end}}
-            --project {{base $path | shellQuote}} {{printf "/local-projects/%d" $index | shellQuote}}
-            {{end}}
+            uv run --locked --group docs sphinx-build
+            -E -W --keep-going -b html -c docs docs/pages {{.docs_output | shellQuote}}
 
-  ci/docs:
-    desc: Build static docs
+  docs/serve:
+    desc: Serve static
+    vars:
+      docs_projects: '{{.DOCS | default ""}}'
+      docs_port: '{{.DOCS_PORT | default "8040"}}'
+    preconditions: *docs_preconditions
     cmds:
       - task: python:_uv/tool
         vars:
+          CONTAINER_PORTS: '127.0.0.1:{{.docs_port}}:{{.docs_port}}'
+          CONTAINER_ENVS: PYTHONUNBUFFERED=1 TINI_KILL_PROCESS_GROUP=1
+          CONTAINER_VOLUMES: *docs_volumes
           CMD: >-
-            uv run --locked --group docs sphinx-build
-            -E -W --keep-going -b html -c docs docs/pages build/docs
+            uv run --locked --group docs sphinx-autobuild
+            --host 0.0.0.0 --port {{.docs_port | shellQuote}}
+            --watch docs --pre-build 'rm -rf /tmp/limanix-docs-preview'
+            -E -a -W --keep-going -c docs docs/pages /tmp/limanix-docs-preview
