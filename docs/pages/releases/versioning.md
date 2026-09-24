@@ -1,59 +1,81 @@
-# Versions and release lines
+# Versions and rebuilds
 
-The client and module catalog have separate versions. 
-A client release tag records both, so each published client identifies the catalog it includes.
+Keep three numbers separate: the **client code version**, its **rebuild counter**, and the **module catalog version**.
 
-## Read a release tag
+## Read a tag
 
-| Item                  | Format                 | Example    |
-|-----------------------|------------------------|------------|
-| Module release        | `vN`                   | `v7`       |
-| Client release branch | `vMAJOR.MINOR`         | `v1.2`     |
-| Client release tag    | `vMAJOR.MINOR.PATCH+N` | `v1.2.3+7` |
+| Tag | Meaning |
+|-----|---------|
+| Modules `v7` | Catalog revision 7 |
+| Client `v1.2.3` | Client code version 1.2.3, built with its Taskfile catalog pin |
+| Client `v1.2.3+4` | The fourth catalog rebuild of client version 1.2.3 |
 
-In `v1.2.3+7`, **`1.2.3` is the client version** and **`7` selects modules `v7`**. 
-The `v1.2` branch carries that client's release line.
+The client tags `v1.2.3`, `v1.2.3+1`, and `v1.2.3+4` point to the **same client commit**. Each rebuild has its own binaries and GitHub Release.
 
-## Choose the next version
+```{important}
+`+4` is a rebuild counter. It does not mean modules `v4`.
+Client `v1.2.3+4` can contain modules `v7`. Read the **Module catalog** link in its GitHub Release to find the included version.
+```
 
-The client code version uses the usual SemVer components: 
-`PATCH` for compatible bug fixes, `MINOR` for compatible additions, and `MAJOR` for incompatible changes.
-[SemVer defines these rules](https://semver.org/#summary).
+### Accepted formats
 
-For example, starting from client `v1.2.3+7`:
+| Item | Format | Valid examples | Rejected examples |
+|------|--------|----------------|-------------------|
+| Modules | `vN`, starting at 1 | `v1`, `v7`, `v123` | `v0`, `v01`, `v1.2.3` |
+| Client code | `vMAJOR.MINOR.PATCH` | `v0.1.0`, `v1.2.3` | `v1.2`, `v01.2.3`, `v1.2.3-rc.1` |
+| Client rebuild | Code tag followed by `+N`, starting at 1 | `v1.2.3+1`, `v1.2.3+12` | `v1.2.3+0`, `v1.2.3+01`, `v1.2.3+abc` |
 
-| Change                                                 | Next client tag | Release branch |
-|--------------------------------------------------------|-----------------|----------------|
-| Update only the catalog to `v8`                        | `v1.2.3+8`      | `v1.2`         |
-| Fix a client bug, keep modules `v7`                    | `v1.2.4+7`      | `v1.2`         |
-| Add compatible client functionality, keep modules `v7` | `v1.3.0+7`      | New `v1.3`     |
-| Make an incompatible client change, keep modules `v7`  | `v2.0.0+7`      | New `v2.0`     |
+Code version components can be zero; leading zeros are rejected. These workflows publish stable releases and use a numeric rebuild suffix.
 
-A new minor or major line starts from the selected code in `main`. 
-A patch release stays on its existing release branch.
+## Choose the next client version
 
-**Published tags do not move.** Each release gets a new tag; 
-an existing tag is never overwritten to point at a newer client or catalog.
+The code version follows the [SemVer components](https://semver.org/#summary):
 
-## Select the latest release
+| Change from `v1.2.3+4` | Next tag |
+|------------------------|----------|
+| Rebuild the same code with another catalog | `v1.2.3+5` |
+| Compatible bug fix | `v1.2.4` |
+| Compatible feature | `v1.3.0` |
+| Incompatible client change | `v2.0.0` |
 
-The `+N` suffix is SemVer build metadata. Standard SemVer comparison ignores it, so `1.2.3+7` and `1.2.3+8` have equal precedence.
-[See SemVer's build metadata rule](https://semver.org/#spec-item-10).
+A new code version starts without a suffix. Its first catalog rebuild adds `+1`; the previous code version's counter does not carry over.
 
-LimaNix adds an explicit rule when selecting a published client release:
+In SemVer, the suffix after `+` is [build metadata](https://semver.org/#spec-item-10). SemVer ignores it when comparing precedence. LimaNix uses **Git version sorting** to choose between rebuilds, including their numeric counters.
 
-1. Compare `MAJOR`, `MINOR`, and `PATCH` numerically, in that order.
-2. If the client versions match, compare the catalog number `N` numerically.
+## Keep the catalog and source commit separate
 
-Under this rule, `v1.2.3+8` follows `v1.2.3+7`. 
-This catalog comparison is a **LimaNix release-selection rule**, not part of SemVer precedence.
+| Build path | Where the modules tag comes from | What changes in Git |
+|------------|---------------------------------|---------------------|
+| New client code tag | `modules_version` in that commit's `Taskfile.yml` | The code tag identifies the selected `main` commit |
+| Catalog event | `client_payload.tag`, such as `v7` | A new `+N` tag points to the selected client's existing commit |
 
-Use `+` for the catalog suffix: `v1.2.3-7` would mean a prerelease under [SemVer's prerelease rule](https://semver.org/#spec-item-9).
+For example, the source for `v1.2.3+4` may still contain `modules_version: 'v1'`. The release build can pass `modules_version=v7` and record `v7` in its GitHub Release. The unchanged Taskfile is the default for that source, not a record of every later rebuild.
 
-## Support three release lines
+Keep published tags on their original commits. A new code change gets a new base version; a new catalog build gets a new counter.
 
-Support covers **three `MAJOR.MINOR` lines**, not three individual release tags.
-For example, `v1.0`, `v1.1`, and `v1.2` each receive catalog updates and retain their own client version.
+(select-up-to-three-versions)=
+## Select up to three versions
 
-The site presents the latest successfully published client release from each supported line. 
-See [Documentation builds](documentation.md) for how the client and catalog sources become one version of the documentation.
+The active unit is the **full base version**, including `PATCH`. `v1.2.4` and `v1.2.3` count as two versions.
+
+For catalog rebuilds, `get-tags`:
+
+1. Matches the client tag glob and requires a published GitHub Release.
+2. Sorts the matching tags by Git version order, highest first.
+3. Groups tags by the text before `+` and keeps the first tag in each group.
+4. Returns up to three groups as `{tag, commit_sha}` entries.
+
+| Published tags | Selected for the active set |
+|----------------|-----------------------------|
+| `v1.3.0` | `v1.3.0` |
+| `v1.2.4+10`, `v1.2.4+2`, `v1.2.4` | `v1.2.4+10` |
+| `v1.2.3+4`, `v1.2.3+1`, `v1.2.3` | `v1.2.3+4` |
+| `v1.2.2+5`, `v1.2.2` | Outside the active set |
+
+With fewer than three base versions, all available groups are selected. A tag without a published GitHub Release does not enter this set.
+
+Leaving the active set stops automatic catalog rebuilds. Existing releases remain available.
+
+```{note}
+The shared selector checks publication and a tag glob; it does not exclude GitHub prereleases or apply the client's full format check. An unsupported tag can occupy a selection slot before later validation rejects it. The examples above use the stable tag formats accepted by this release process.
+```

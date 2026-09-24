@@ -1,38 +1,39 @@
 # Release process
 
-Publish a module catalog, build the supported clients with it, then publish documentation for those exact builds.
-
-```{note}
-These pages define the agreed release design. 
-Configuring the workflows is a separate step.
-```
+**Client releases come from `main`. A new module catalog rebuilds up to three existing client versions at their original commits.**
 
 ```mermaid
 flowchart LR
-    accTitle: Release flow across the three repositories
-    accDescr: A published module catalog triggers client releases. Each published client release triggers its documentation build.
-    modules["modules release"] --> client["client releases"]
-    client --> docs["docs publication"]
+    accTitle: Two entry points into the release process
+    accDescr: A module release starts client rebuilds. A new client code tag starts one client build. Both paths finish with one notification to documentation.
+    modules["Module release"] --> client["Client builds"]
+    code["Client code tag"] --> client
+    client --> finalize["Latest + docs event"]
 ```
 
-## Repository responsibilities
+## What starts a release?
 
-| Repository | Owns                                                                              | Release result                                                  |
-|------------|-----------------------------------------------------------------------------------|-----------------------------------------------------------------|
-| `modules`  | Catalog code and `modules/docs/`                                                  | A tagged catalog and a notification to `client`                 |
-| `client`   | Client code, its catalog pin, `client/docs/`, and reference generators            | Binaries for a tagged client build and a notification to `docs` |
-| `docs`     | The homepage, these process pages, theme, navigation, site build, and publication | One site with documentation for the supported client lines      |
+| Change | Start with | Result |
+|--------|------------|--------|
+| Module catalog changes | A modules tag such as `v7` | Rebuild up to three client base versions with that catalog |
+| Client code changes | A client tag such as `v1.3.0` on `main` | Build and publish that one client version |
 
-**Keep product documentation beside its code.** 
-The site assembles those sources at build time; maintainers do not copy the guides into this repository.
+There are no client release branches or automatic catalog-update PRs. A catalog rebuild supplies the new modules tag as a build argument; the client commit stays unchanged.
 
-## Start here
+## Three repositories, three responsibilities
 
-| Task                                                         | Read                                     |
-|--------------------------------------------------------------|------------------------------------------|
-| Understand `v1.2.3+8` or choose a release number             | [Versioning](versioning.md)              |
-| Publish modules or release a client change                   | [Release workflow](workflow.md)          |
-| Understand source selection and the three published versions | [Documentation builds](documentation.md) |
+| Repository | Owns | Sends or publishes |
+|------------|------|--------------------|
+| `modules` | Catalog code and `modules/docs/` | GitHub Release, then a catalog event to `client` |
+| `client` | Application code, its default catalog pin, `client/docs/`, and reference generators | Binaries, a record of the included catalog, then one event to `docs` |
+| `docs` | Homepage, release-process pages, theme, and navigation | Static documentation site |
+
+**Product guides stay beside their code.** Maintainers do not copy those guides into `docs`.
+
+## Read the process in order
+
+1. [Versions and rebuilds](versioning.md) — what a tag means and which three versions stay active.
+2. [Release workflow](workflow.md) — how to publish modules or client code, and what each job does.
 
 ```{toctree}
 :hidden:
@@ -40,5 +41,4 @@ The site assembles those sources at build time; maintainers do not copy the guid
 
 versioning
 workflow
-documentation
 ```
