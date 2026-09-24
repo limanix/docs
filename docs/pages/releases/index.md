@@ -1,47 +1,50 @@
 # Release process
 
-**Client releases come from `main`. 
-A new module catalog rebuilds up to three existing client versions at their original commits.**
+A merged pull request changes the source; a release makes that change available to users.
+This guide follows your contribution from PR checks to binaries and published documentation.
 
 ```mermaid
-flowchart LR
-    accTitle: Two entry points into the release process
-    accDescr: A module release starts client rebuilds. A new client code tag starts one client build. Both paths finish with one notification to documentation.
-    modules["Module release"] --> client["Client builds"]
-    code["Client code tag"] --> client
-    client --> finalize["Latest + docs event"]
+flowchart TD
+    accTitle: From a contribution to a release
+    accDescr: After PR checks and merge, a client tag publishes one client version, a modules tag rebuilds existing clients, and a docs tag updates the shared site.
+    pr["Pull request"] --> checks["Checks + review"] --> merge["Merge to main"]
+    merge --> client["Client tag"]
+    merge --> modules["Modules tag"]
+    merge --> docs["Docs tag"]
+    modules --> rebuild["Rebuild up to 3 client versions"]
+    client --> release["Client release"]
+    rebuild --> release
+    release --> snapshot["Versioned client + module docs"]
+    docs --> site["Shared documentation site"]
 ```
 
-## What starts a release?
+## Where does your change belong?
 
-| Change                 | Start with                              | Result                                                     |
-|------------------------|-----------------------------------------|------------------------------------------------------------|
-| Module catalog changes | A modules tag such as `v7`              | Rebuild up to three client base versions with that catalog |
-| Client code changes    | A client tag such as `v1.3.0` on `main` | Build and publish that one client version                  |
+| Your change | Repository | Documentation beside it |
+|-------------|------------|--------------------------|
+| CLI, configuration, or VM behavior | `client` | `docs/` |
+| Module code, defaults, or metadata | `modules` | `docs/` |
+| Shared pages, theme, or navigation | `docs` | `docs/pages/` and `docs/conf.py` |
 
-There are no client release branches or automatic catalog-update PRs. 
-A catalog rebuild supplies the new modules tag as a build argument; the client commit stays unchanged.
+Update product guides in the repository that owns the behavior.
+The site builds them from those sources.
 
-## Three repositories, three responsibilities
+```{important}
+Passing checks or merging a PR does not publish a release.
+A client tag, a modules tag, or a docs tag starts the matching release path.
+```
 
-| Repository | Owns                                                                                | Sends or publishes                                                   |
-|------------|-------------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| `modules`  | Catalog code and `modules/docs/`                                                    | GitHub Release, then a catalog event to `client`                     |
-| `client`   | Application code, its default catalog pin, `client/docs/`, and reference generators | Binaries, a record of the included catalog, then one event to `docs` |
-| `docs`     | Homepage, release-process pages, theme, and navigation                              | Static documentation site                                            |
+## Follow your change
 
-**Product guides stay beside their code.** 
-Maintainers do not copy those guides into `docs`.
-
-## Read the process in order
-
-1. [Versions and rebuilds](versioning.md) - what a tag means and which three versions stay active.
-2. [Release workflow](workflow.md) - how to publish modules or client code, and what each job does.
+- [PR checks and local commands](pull-request-checks)
+- [Version numbers and rebuilds](versioning.md)
+- [Release paths after merge](release-paths)
+- [Documentation publication](published-documentation)
 
 ```{toctree}
 :hidden:
 :maxdepth: 1
 
-versioning
 workflow
+versioning
 ```

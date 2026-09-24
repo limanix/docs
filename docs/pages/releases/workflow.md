@@ -1,116 +1,156 @@
-# Release workflow
+# From pull request to release
 
-The client has two entry points: a new code tag or a module-release event. 
-Both use the same build and publication jobs. 
-Successfully published versions are collected into one docs event.
+Open your PR against `main` in the repository that owns the change.
+Update its guides when behavior changes.
 
-## Find the right workflow
+(pull-request-checks)=
+## Before merge
 
-These files live in `client/.github/workflows/`:
+| Repository | Automated checks | What `gate` includes |
+|------------|------------------|----------------------|
+| `client` | Go formatting, lint, race tests, vulnerability scan, then macOS builds for Intel and Apple Silicon | Go checks and both native builds |
+| `modules` | Nix formatting, lint, catalog validation, and NixOS configuration evaluation | Nix checks and the PR label check |
+| `docs` | Sphinx build of the shared pages, with warnings treated as errors | Documentation build |
 
-| File           | Responsibility                                                          |
-|----------------|-------------------------------------------------------------------------|
-| `labels.yml`   | Check the PR's changelog label                                          |
-| `pr.yml`       | Run Go checks, build macOS binaries, and report `gate`                  |
-| `release.yml`  | Receive a new client code tag                                           |
-| `event.yml`    | Receive a module catalog release event                                  |
-| `_release.yml` | Run selection, the release matrix, and `finalize` for both entry points |
-| `_select.yml`  | Select source tags and commit SHAs; verify the module release           |
-| `_deploy.yml`  | Prepare one release, call the shared build, and publish its binaries    |
-| `__build.yml`  | Build and sign macOS binaries for both PRs and releases                 |
+Every repository checks that the PR has at least one label.
+The current check accepts any label; it does not choose the release version.
+In `client` and `docs`, labels run separately from `gate`.
 
-The PR path checks the proposed code. 
-It does not publish a release. 
-The release path supplies the exact source SHA, release tag, and catalog version to `__build.yml`.
+<details>
+<summary>Run client checks locally</summary>
 
-## Release client code
+From the `client` repository, with Task and Docker available:
 
-1. Merge the code into `main` through the normal PR checks. Include the intended `modules_version` pin in `Taskfile.yml`.
-2. Choose a new [code version](versioning.md), such as `v1.3.0`, and push that tag on the intended commit in `main`.
-3. `_select.yml` returns that one tag and its commit SHA, reads the catalog pin, and verifies its published module release.
-4. `_deploy.yml` verifies and builds the client with that catalog, then publishes its GitHub Release.
-5. `finalize` updates Latest and sends the published client and module tags to docs.
-
-**This releases one client version.** Other active versions are rebuilt when a module event arrives.
-
-Choose a catalog that already has a published, non-draft, non-prerelease modules release. 
-Selection checks both its tag format and its GitHub Release before building.
-
-Client code tags start without `+N`. Tags containing `+` are excluded from the push trigger; 
-publishing a rebuild tag does not start another client release run.
-
-## Release a module catalog
-
-Push a new tag such as `v7` in `modules`, on a commit contained in its `main` branch. 
-The modules `release.yml`:
-
-1. Validates the `vN` format and the commit's membership in `main`.
-2. Publishes the module GitHub Release.
-3. Sends this event to `client`:
-
-```json
-{
-  "event_type": "limanix-modules-release",
-  "client_payload": {"tag": "v7"}
-}
+```bash
+task --yes ci/fmt ci/lint ci/test ci/vuln
 ```
 
-The client checks that `v7` is valid and has a published, non-draft, non-prerelease release. 
-It then selects [up to three client base versions](select-up-to-three-versions).
+The native build also needs macOS, Go, and the Xcode command-line tools:
 
-A **matrix** runs the same release jobs once for each selected client. 
-
-Those jobs run in parallel:
-
-| Selected source tag | New release tag | Included catalog |
-|---------------------|-----------------|------------------|
-| `v1.3.0`            | `v1.3.0+1`      | `v7`             |
-| `v1.2.4+10`         | `v1.2.4+11`     | `v7`             |
-| `v1.2.3+4`          | `v1.2.3+5`      | `v7`             |
-
-Each new tag points to the commit selected for its source tag. 
-The catalog is passed as a build argument; the workflow creates no client commit, PR, or release branch.
-
-## Follow one release through `_deploy`
-
-```mermaid
-flowchart LR
-    accTitle: The three jobs for one client release
-    accDescr: Prepare checks the source and chooses the release version. The shared build creates signed binaries. Publish downloads those binaries and creates the GitHub Release.
-    prepare["prepare"] --> build["__build"]
-    build --> artifact["Binaries artifact"]
-    artifact --> publish["publish"]
+```bash
+task --yes ci/build
 ```
 
-| Job       | What it does                                                                                                                   |
-|-----------|--------------------------------------------------------------------------------------------------------------------------------|
-| `prepare` | Validates the source tag, SHA, and `main` ancestry; keeps the code version or increments `+N`                                  |
-| `build`   | Calls `__build.yml` with the SHA, final release tag, and modules tag; runs `ci/build` on macOS and uploads `limanix-bin-<tag>` |
-| `publish` | Publishes those binaries under the prepared tag, then uploads a receipt containing the client and module tags                  |
+It builds and ad hoc signs both macOS binaries.
 
-An existing target tag pointing to another commit stops preparation. A failed build stops publication for that client.
+</details>
 
-The release body records both inputs:
+<details>
+<summary>Run module checks locally</summary>
 
-```markdown
-Client source: `<commit SHA>`
-Module catalog: [v7](https://github.com/limanix/modules/releases/tag/v7)
+From the `modules` repository, with Task and Docker available:
+
+```bash
+task --yes ci/fmt ci/lint ci/test
 ```
 
-Keep this record with the release, especially when the bundle differs from the source Taskfile pin.
+The checks validate catalog metadata and evaluate NixOS configurations for both supported architectures.
+They cover individual modules, module combinations, and declared versions.
+Evaluation does not build packages or boot a VM.
 
-## Finish once with `finalize`
+</details>
 
-The individual releases publish with `make_latest: false`. After the entire matrix finishes, `finalize`:
+(check-documentation-changes)=
+<details>
+<summary>Build and preview documentation locally</summary>
 
-1. Finds the highest published client tag using Git version order.
-2. Marks that GitHub Release as **Latest**.
-3. Collects the publication receipts from this run.
-4. Sends one `limanix-client-release` event containing those exact client and module pairs. With no receipts, it skips the event.
+Run these commands from the `docs` repository, with Task and Docker available.
 
-Parallel completion order does not decide Latest.
+**Shared pages only**, matching the docs PR check:
 
-For example, if two client versions were published with catalog `v7`:
+```bash
+task --yes ci/docs
+```
+
+**Include product guides**, with `client` and `modules` checked out beside `docs`:
+
+```bash
+task --yes ci/docs DOCS='../client ../modules'
+task --yes docs/serve DOCS='../client ../modules'
+```
+
+Open <http://127.0.0.1:8040> for the preview.
+The `DOCS` paths point to repository roots; their `docs/` directories are mounted read-only into the build.
+No guide files are copied into the docs repository.
+
+This preview includes handwritten guides.
+The release build also generates the CLI and configuration references for its exact client and modules versions.
+Client and modules PR workflows do not run this Sphinx build.
+
+</details>
+
+A failed, cancelled, or skipped dependency does not pass `gate`.
+New commits rerun PR checks; changing labels reruns the label check.
+In `modules`, a label change also reruns the Nix checks.
+
+(release-paths)=
+## After merge
+
+| Change | Release trigger | Result |
+|--------|-----------------|--------|
+| Client code | Client tag such as `v1.3.0` | One client release using that commit's catalog pin |
+| Module code or metadata | Modules tag such as `v7` | Catalog release, then rebuilds of up to three client base versions |
+| Shared documentation | Docs tag such as `v1.0.0` | Updated shared pages and site infrastructure |
+
+<details>
+<summary>Follow a client code release</summary>
+
+1. Selection reads `modules_version` from the tagged commit's `Taskfile.yml` and verifies that the catalog has a published stable release.
+2. Preparation checks the client tag format and verifies that its commit belongs to `main`.
+3. The shared build creates both macOS binaries from that commit and catalog.
+4. Publication creates the GitHub Release and records the client and modules tags for documentation.
+
+The tagged commit can be an earlier commit in `main`.
+Other client versions are not rebuilt by this path.
+Tags containing `+` do not trigger another client code release.
+
+</details>
+
+<details>
+<summary>Follow a module catalog release</summary>
+
+1. The modules workflow verifies the `vN` tag and checks that its commit is contained in `main`.
+2. It publishes the catalog's GitHub Release.
+3. It sends `limanix-modules-release` to `client`, with the modules tag in `client_payload.tag`.
+4. The client verifies the catalog release and selects [up to three client base versions](select-up-to-three-versions).
+5. Each selected client is rebuilt at its existing commit with the new catalog and the next `+N` suffix.
+
+For example, a `v7` catalog release can produce:
+
+| Selected client | New client release | Included modules |
+|-----------------|--------------------|------------------|
+| `v1.3.0` | `v1.3.0+1` | `v7` |
+| `v1.2.4+10` | `v1.2.4+11` | `v7` |
+| `v1.2.3+4` | `v1.2.3+5` | `v7` |
+
+These builds run in parallel.
+The tag checks do not rerun the module PR checks.
+
+</details>
+
+<details>
+<summary>Follow a shared documentation release</summary>
+
+1. The docs workflow validates a tag such as `v1.0.0`.
+2. Sphinx builds the shared pages from the tagged docs source.
+3. The deployment workflow applies the site infrastructure and publishes those pages.
+
+Product guides follow the client release event below.
+
+</details>
+
+(notify-docs)=
+## What happens after the client builds?
+
+Each published client release records its source commit and a **Module catalog** link.
+Use that link to find the included modules version.
+
+After the builds finish, `finalize` marks the highest published client version as GitHub **Latest**.
+When this run has publication records, it sends their exact client and modules pairs to `docs` in one `limanix-client-release` event.
+Build completion order does not choose Latest.
+
+<details>
+<summary>See the event for two published clients</summary>
 
 ```json
 {
@@ -124,32 +164,83 @@ For example, if two client versions were published with catalog `v7`:
 }
 ```
 
-## Understand failures and retries
+Publication records are uploaded after each GitHub Release.
+Without them, finalization skips the event instead of choosing an older release marked Latest.
 
-Client release runs share one queue. 
-Within a run, one failed matrix entry does not cancel the others or roll back their published releases.
+</details>
 
-| Outcome                                              | What happens next                                                                                      |
-|------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
-| Selection fails, or no client tags are selected      | The release matrix and `finalize` are skipped                                                          |
-| Some matrix entries fail                             | Successful releases remain published; the docs event contains the pairs recorded by those publications |
-| No publication receipts are available                | No docs event is sent; an older published release can still be marked Latest                           |
-| No published client tag is found during finalization | The Latest update is skipped; docs notification depends on this run's receipts                         |
-| The run is cancelled                                 | `finalize` is skipped                                                                                  |
-| A finalization step fails                            | Published client releases remain; check that step to determine whether docs was notified               |
+(published-documentation)=
+## When does your documentation appear?
 
-The docs event contains only versions recorded after successful publication. 
-It does not select an older release merely because that release is marked Latest.
+The docs event checks out each client and catalog at the tags in the event.
+It generates the references and builds a complete site for that pair.
+Shared pages and theme come from the docs checkout used by that event.
 
-```{warning}
-Before retrying failed jobs from an older run, check its prepared tag and catalog against the current GitHub Release. 
-The workflow accepts an existing target tag on the same SHA, and the publication action can replace existing release assets. 
-A later run may already have used that tag with another catalog. 
-The current workflow does not detect that catalog mismatch.
-```
+| Address | Content |
+|---------|---------|
+| `/` | Shared site, updated by a docs tag |
+| `/client/` | Redirect to the highest published documentation version |
+| `/client/v1.3.0+1/` | Saved site for that client release and its catalog |
 
-Sending the same catalog event again also starts a new selection and increments the current rebuild counters. 
-It is not treated as an already completed request.
+The version switcher shows both tags, for example **v1.3.0+1 · modules v7**.
+Switching versions changes the whole saved site, including its guides, references, and search.
 
-These workflows publish downloadable binaries. 
-They do not update an installed application on a user's Mac.
+A client or module guide appears after a release containing it passes the docs workflow.
+Existing archives stay unchanged.
+The three-version rebuild limit does not remove older documentation.
+
+<details>
+<summary>Why can Latest and current documentation differ?</summary>
+
+GitHub Latest is selected from published client releases.
+Current documentation is selected from completed documentation snapshots.
+A client release can exist before its docs build finishes, or its docs build can fail.
+
+Docs orders snapshots by major, minor, patch, then rebuild number.
+It keeps completed archives unchanged when the same event arrives again.
+An event that pairs an archived client tag with a different catalog fails publication.
+
+</details>
+
+## Follow the result
+
+If your change is missing, first check whether a release includes its commit.
+For missing pages, also check the matching run in the docs repository.
+A successful notification means the event was sent; it does not prove the docs were published.
+
+<details>
+<summary>Understand a failed or partial run</summary>
+
+| What you see | What it means |
+|--------------|---------------|
+| Client selection fails or selects nothing | No client build starts |
+| One client build fails | Other builds continue and their published releases remain |
+| A release exists but its publication record is missing | That pair cannot enter this run's docs event |
+| The client run is cancelled | Finalization is skipped; already published releases can remain |
+| One docs build fails | Publication of that event's documentation is skipped |
+| Documentation publication fails | Earlier uploads can remain; the client releases are unaffected |
+
+Include the repository, run link, tag, and failed job when reporting the problem.
+
+Sending the same modules event again selects versions again and increments their rebuild counters.
+Retrying old client publication jobs can reuse an existing tag on the same commit without checking its recorded catalog.
+
+</details>
+
+<details>
+<summary>Find the workflow behind a check or release</summary>
+
+All paths below are relative to each repository's `.github/workflows/` directory.
+
+| Repository | File | Role |
+|------------|------|------|
+| `client` | `pr.yml`, `labels.yml` | PR checks and labels |
+| `client` | `release.yml`, `event.yml` | Code tag and modules event entry points |
+| `client` | `_release.yml`, `_select.yml` | Select versions, run builds, and finalize |
+| `client` | `_deploy.yml`, `__build.yml` | Prepare, build, and publish each client |
+| `modules` | `pr.yml`, `release.yml` | PR checks, catalog release, and client notification |
+| `docs` | `pr.yml`, `labels.yml` | Shared-page build and labels |
+| `docs` | `release.yml` | Shared site release |
+| `docs` | `event.yml`, `build-docs.yml`, `publish-client-docs.yml` | Build and publish versioned product docs |
+
+</details>
