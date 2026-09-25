@@ -1,4 +1,4 @@
-name: Client documentation
+name: Update documentation
 
 on:
   repository_dispatch:
@@ -33,22 +33,46 @@ jobs:
           ' "$GITHUB_EVENT_PATH")
           printf 'releases=%s\n' "$releases" >> "$GITHUB_OUTPUT"
 
+  sources:
+    needs: select
+    uses: ./.github/workflows/select-docs.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      releases: ${{ needs.select.outputs.releases }}
+
   build:
     name: Build ${{ matrix.client_tag }} with modules ${{ matrix.modules_tag }}
-    needs: select
+    needs: [select, sources]
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.select.outputs.releases) }}
     uses: ./.github/workflows/build-docs.yml
     with:
+      docs-ref: ${{ needs.sources.outputs.docs-ref }}
       client-tag: ${{ matrix.client_tag }}
       modules-tag: ${{ matrix.modules_tag }}
       artifact-name: docs-client-${{ matrix.client_tag }}
+      snapshot: true
+
+  build-current:
+    name: Build current documentation
+    needs: sources
+    uses: ./.github/workflows/build-docs.yml
+    with:
+      docs-ref: ${{ needs.sources.outputs.docs-ref }}
+      client-tag: ${{ needs.sources.outputs.client-tag }}
+      modules-tag: ${{ needs.sources.outputs.modules-tag }}
+      artifact-name: docs-current
 
   publish:
-    needs: build
-    uses: ./.github/workflows/publish-client-docs.yml
+    needs: [build, build-current]
+    uses: ./.github/workflows/publish-docs.yml
     permissions:
       contents: read
       id-token: write
+    with:
+      archives: true
+      distribution-id: ${{ vars.AWS_CLOUDFRONT_DISTRIBUTION_ID }}

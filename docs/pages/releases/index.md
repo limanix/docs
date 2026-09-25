@@ -6,7 +6,7 @@ This guide follows your contribution from PR checks to binaries and published do
 ```mermaid
 flowchart TD
     accTitle: From a contribution to a release
-    accDescr: After PR checks and merge, a client tag publishes one client version, a modules tag rebuilds existing clients, and a docs tag updates the shared site.
+    accDescr: After PR checks and merge, client and modules releases publish product documentation, and a docs tag updates shared pages and the theme; both paths update one current site while client release snapshots remain available as archives.
     pr["Pull request"] --> checks["Checks + review"] --> merge["Merge to main"]
     merge --> client["Client tag"]
     merge --> modules["Modules tag"]
@@ -14,9 +14,14 @@ flowchart TD
     modules --> rebuild["Rebuild up to 3 client versions"]
     client --> release["Client release"]
     rebuild --> release
-    release --> snapshot["Versioned client + module docs"]
-    docs --> site["Shared documentation site"]
+    release --> productdocs["Client + module documentation"]
+    productdocs --> snapshot["Saved client versions"]
+    productdocs --> site["Current complete site at /"]
+    docs --> site
 ```
+
+The current site combines shared pages, client guides, module guides, and generated references in one navigation and search.
+The version switcher opens earlier client and module snapshots.
 
 ## Where does your change belong?
 

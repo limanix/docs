@@ -1,0 +1,187 @@
+name: Publish documentation
+
+on:
+  workflow_call:
+    inputs:
+      archives:
+        description: Publish client version snapshots from this run.
+        type: boolean
+        default: false
+      distribution-id:
+        description: CloudFront distribution serving the documentation.
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+    env:
+      SITE_BUCKET_NAME: ${{ vars.SITE_BUCKET_NAME }}
+    steps:
+      - name: Download current documentation
+        uses: actions/download-artifact@v8
+        with:
+          name: docs-current
+          path: build/current
+
+      - name: Check current documentation
+        run: |
+          set -euo pipefail
+          test -f build/current/index.html
+          jq -e '
+            (.docs_sha | test("^[0-9a-f]{40}$")) and
+            ((.client_tag == "" and .modules_tag == "") or
+              ((.client_tag | test("^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(\\+[1-9][0-9]*)?$")) and
+               (.modules_tag | test("^v[1-9][0-9]*$"))))
+          ' build/current/release.json > /dev/null
+          if [[ $(jq -r '.client_tag' build/current/release.json) != '' ]]; then
+            test -f build/current/projects/client/index.html
+            test -f build/current/projects/modules/index.html
+          fi
+
+      - name: Download snapshots
+        if: inputs.archives
+        uses: actions/download-artifact@v8
+        with:
+          pattern: docs-client-*
+          path: build/archives
+          merge-multiple: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Check deployed docs source
+        if: inputs.archives
+        run: |
+          set -euo pipefail
+          aws s3api get-object --bucket "$SITE_BUCKET_NAME" --key release.json \
+            "$RUNNER_TEMP/deployed-docs.json" > /dev/null
+          if ! jq -e --slurpfile current build/current/release.json \
+            '.docs_sha == $current[0].docs_sha' "$RUNNER_TEMP/deployed-docs.json" > /dev/null; then
+            echo 'The docs source changed during this run. Rerun all jobs to rebuild the current site.' >&2
+            exit 1
+          fi
+
+      - name: Publish immutable snapshots
+        if: inputs.archives
+        run: |
+          set -euo pipefail
+          publication_dir="$RUNNER_TEMP/client-docs"
+          shopt -s nullglob
+          mkdir -p "$publication_dir"
+
+          snapshots=(build/archives/*)
+          if [[ ${#snapshots[@]} -eq 0 ]]; then
+            echo 'No client documentation snapshots were downloaded.' >&2
+            exit 1
+          fi
+
+          pending_snapshots=()
+          for snapshot in "${snapshots[@]}"; do
+            client_tag=${snapshot##*/}
+            test -f "$snapshot/index.html"
+            jq -e --arg client_tag "$client_tag" '.client_tag == $client_tag' \
+              "$snapshot/release.json" > /dev/null
+
+            receipt_key="client/$client_tag/release.json"
+            receipt_exists=$(aws s3api list-objects-v2 \
+              --bucket "$SITE_BUCKET_NAME" --prefix "$receipt_key" --max-keys 1 --output json |
+              jq -r --arg key "$receipt_key" 'any(.Contents[]?; .Key == $key)')
+
+            if [[ "$receipt_exists" == true ]]; then
+              aws s3api get-object --bucket "$SITE_BUCKET_NAME" --key "$receipt_key" \
+                "$publication_dir/published.json" > /dev/null
+              jq -se --slurpfile expected "$snapshot/release.json" \
+                '. == $expected' "$publication_dir/published.json" > /dev/null
+              printf 'Already published: %s\n' "$client_tag"
+            else
+              pending_snapshots+=("$snapshot")
+            fi
+          done
+
+          if [[ ${#pending_snapshots[@]} -gt 0 ]]; then
+            for snapshot in "${pending_snapshots[@]}"; do
+              destination="s3://$SITE_BUCKET_NAME/client/${snapshot##*/}/"
+              aws s3 sync "$snapshot" "$destination" --exclude release.json \
+                --delete --no-follow-symlinks --only-show-errors --no-progress
+
+              # The receipt marks a completely uploaded snapshot.
+              aws s3 cp "$snapshot/release.json" "${destination}release.json" \
+                --content-type application/json --only-show-errors
+            done
+          fi
+
+      - name: Build version list
+        run: |
+          set -euo pipefail
+          publication_dir="$RUNNER_TEMP/client-docs"
+          shopt -s nullglob
+          mkdir -p "$publication_dir/catalog"
+          aws s3 sync "s3://$SITE_BUCKET_NAME/client/" "$publication_dir/catalog" \
+            --exclude '*' --include '*/release.json' --only-show-errors --no-progress
+
+          receipts=("$publication_dir"/catalog/*/release.json)
+          # Compare major, minor, patch and rebuild by digit count, then digits.
+          jq -s --slurpfile current build/current/release.json '
+            sort_by(.client_tag | [scan("[0-9]+") | [length, .]]) |
+            reverse |
+            if (.[0].client_tag // "") != $current[0].client_tag
+            then error("Current documentation must use the highest published client version") else . end |
+            to_entries |
+            map({
+              name: "\(.value.client_tag) · modules \(.value.modules_tag)",
+              version: .value.client_tag,
+              url: (if .key == 0 then "/" else "/client/\(.value.client_tag | @uri)/" end)
+            } + if .key == 0 then {preferred: true} else {} end)
+          ' "${receipts[@]}" < /dev/null > "$publication_dir/versions.json"
+
+      - name: Publish current documentation
+        run: |
+          set -euo pipefail
+          publication_dir="$RUNNER_TEMP/client-docs"
+
+          # Keep the version archives; replace only the current site's files.
+          aws s3 sync build/current "s3://$SITE_BUCKET_NAME/" \
+            --exclude 'client/*' --exclude index.html --exclude release.json \
+            --delete --no-follow-symlinks --cache-control no-cache \
+            --only-show-errors --no-progress
+          aws s3 cp build/current/index.html "s3://$SITE_BUCKET_NAME/index.html" \
+            --content-type 'text/html; charset=utf-8' --cache-control no-cache --only-show-errors
+
+          cat > "$publication_dir/index.html" <<HTML
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <title>Limanix documentation</title>
+              <meta http-equiv="refresh" content="0; url=/">
+              <link rel="canonical" href="/">
+            </head>
+            <body><a href="/">Current documentation</a></body>
+          </html>
+          HTML
+
+          aws s3 cp "$publication_dir/versions.json" "s3://$SITE_BUCKET_NAME/client/versions.json" \
+            --content-type application/json --cache-control no-cache --only-show-errors
+          aws s3 cp "$publication_dir/index.html" "s3://$SITE_BUCKET_NAME/client/index.html" \
+            --content-type 'text/html; charset=utf-8' --cache-control no-cache --only-show-errors
+
+          # Record the deployed docs source only after the whole site is uploaded.
+          aws s3 cp build/current/release.json "s3://$SITE_BUCKET_NAME/release.json" \
+            --content-type application/json --cache-control no-cache --only-show-errors
+
+      - name: Invalidate documentation
+        uses: mr-chelyshkin/actions/aws-cloudfront-invalidate@v1
+        with:
+          distribution-id: ${{ inputs.distribution-id }}
+          paths: /*

@@ -9,12 +9,12 @@ Update its guides when behavior changes.
 | Repository | Automated checks | What `gate` includes |
 |------------|------------------|----------------------|
 | `client` | Go formatting, lint, race tests, vulnerability scan, then macOS builds for Intel and Apple Silicon | Go checks and both native builds |
-| `modules` | Nix formatting, lint, catalog validation, and NixOS configuration evaluation | Nix checks and the PR label check |
+| `modules` | Nix formatting, lint, catalog validation, and NixOS configuration evaluation | Nix checks |
 | `docs` | Sphinx build of the shared pages, with warnings treated as errors | Documentation build |
 
 Every repository checks that the PR has at least one label.
 The current check accepts any label; it does not choose the release version.
-In `client` and `docs`, labels run separately from `gate`.
+In all three repositories, labels run separately from `gate`.
 
 <details>
 <summary>Run client checks locally</summary>
@@ -80,8 +80,7 @@ Client and modules PR workflows do not run this Sphinx build.
 </details>
 
 A failed, cancelled, or skipped dependency does not pass `gate`.
-New commits rerun PR checks; changing labels reruns the label check.
-In `modules`, a label change also reruns the Nix checks.
+New commits rerun PR checks; changing labels reruns only the label check.
 
 (release-paths)=
 ## After merge
@@ -90,7 +89,7 @@ In `modules`, a label change also reruns the Nix checks.
 |--------|-----------------|--------|
 | Client code | Client tag such as `v1.3.0` | One client release using that commit's catalog pin |
 | Module code or metadata | Modules tag such as `v7` | Catalog release, then rebuilds of up to three client base versions |
-| Shared documentation | Docs tag such as `v1.0.0` | Updated shared pages and site infrastructure |
+| Shared documentation | Docs tag such as `v1.0.0` | Updated current site using the latest documented client and modules pair, plus site infrastructure |
 
 <details>
 <summary>Follow a client code release</summary>
@@ -131,11 +130,14 @@ The tag checks do not rerun the module PR checks.
 <details>
 <summary>Follow a shared documentation release</summary>
 
-1. The docs workflow validates a tag such as `v1.0.0`.
-2. Sphinx builds the shared pages from the tagged docs source.
-3. The deployment workflow applies the site infrastructure and publishes those pages.
+1. The docs workflow validates a tag such as `v1.0.0` and checks that its commit belongs to `main`.
+2. It selects the highest completed client documentation version and its modules tag.
+3. Sphinx combines the tagged shared pages and theme with that pair's guides and generated references.
+4. The workflow applies the site infrastructure and publishes the complete site at `/`.
 
-Product guides follow the client release event below.
+Existing client archives stay unchanged.
+If no product documentation has been published yet, the docs release builds shared pages only.
+Client events need a published docs release because they reuse its recorded docs source commit.
 
 </details>
 
@@ -173,27 +175,49 @@ Without them, finalization skips the event instead of choosing an older release 
 ## When does your documentation appear?
 
 The docs event checks out each client and catalog at the tags in the event.
-It generates the references and builds a complete site for that pair.
-Shared pages and theme come from the docs checkout used by that event.
+It generates the references and saves a complete site for each pair.
+Shared pages and the theme come from the deployed docs release.
+
+The event also rebuilds `/` for the highest client version among completed archives and the incoming pairs.
+Shared pages, product guides, and references appear together in one navigation and search.
 
 | Address | Content |
 |---------|---------|
-| `/` | Shared site, updated by a docs tag |
-| `/client/` | Redirect to the highest published documentation version |
+| `/` | Current complete site, updated by docs tags and client events |
+| `/client/` | Redirect to `/` |
 | `/client/v1.3.0+1/` | Saved site for that client release and its catalog |
 
 The version switcher shows both tags, for example **v1.3.0+1 · modules v7**.
-Switching versions changes the whole saved site, including its guides, references, and search.
+Its current entry opens `/`; older entries open their archives.
+Switching to an archive changes the whole saved site, including its guides, references, and search.
 
 A client or module guide appears after a release containing it passes the docs workflow.
 Existing archives stay unchanged.
 The three-version rebuild limit does not remove older documentation.
 
 <details>
+<summary>Which source versions does the site use?</summary>
+
+| Publication | Shared pages and theme | Client and modules |
+|-------------|------------------------|--------------------|
+| Docs tag | Tagged docs commit | Highest completed documentation pair, if one exists |
+| Client event: each archive | Deployed docs commit | Exact pair from the event |
+| Client event: current site | Deployed docs commit | Highest client version among completed archives and incoming pairs |
+
+The event reads `docs_sha` from the root `release.json` to find the deployed docs commit.
+Merging a docs PR does not change the shared pages used by client events.
+A docs release makes that change available to the current site and later archives.
+
+Publication writes the root `release.json` after the site's files.
+Existing archives keep the shared pages, theme, and product versions they were built with.
+
+</details>
+
+<details>
 <summary>Why can Latest and current documentation differ?</summary>
 
 GitHub Latest is selected from published client releases.
-Current documentation is selected from completed documentation snapshots.
+Current documentation follows the client version recorded by the site's last completed publication.
 A client release can exist before its docs build finishes, or its docs build can fail.
 
 Docs orders snapshots by major, minor, patch, then rebuild number.
@@ -238,9 +262,10 @@ All paths below are relative to each repository's `.github/workflows/` directory
 | `client` | `release.yml`, `event.yml` | Code tag and modules event entry points |
 | `client` | `_release.yml`, `_select.yml` | Select versions, run builds, and finalize |
 | `client` | `_deploy.yml`, `__build.yml` | Prepare, build, and publish each client |
-| `modules` | `pr.yml`, `release.yml` | PR checks, catalog release, and client notification |
+| `modules` | `pr.yml`, `labels.yml` | PR checks and labels |
+| `modules` | `release.yml` | Catalog release and client notification |
 | `docs` | `pr.yml`, `labels.yml` | Shared-page build and labels |
-| `docs` | `release.yml` | Shared site release |
-| `docs` | `event.yml`, `build-docs.yml`, `publish-client-docs.yml` | Build and publish versioned product docs |
+| `docs` | `release.yml`, `event.yml` | Docs tag and client event entry points |
+| `docs` | `select-docs.yml`, `build-docs.yml`, `publish-docs.yml` | Select source versions, build archives and the current site, and publish them |
 
 </details>

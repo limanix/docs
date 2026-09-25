@@ -17,34 +17,79 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Check release tag
         uses: mr-chelyshkin/actions/check-tag-format@v1
         with:
           pattern: '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+      - name: Check release branch
+        uses: mr-chelyshkin/actions/check-tag-branch@v1
+        with:
+          branch: main
 
-  build:
+  sources:
     needs: verify
-    uses: ./.github/workflows/build-docs.yml
-    with:
-      artifact-name: docs-${{ github.sha }}
-
-  deploy:
-    needs: build
-    uses: mr-chelyshkin/actions/.github/workflows/tag-aws-s3-static-release.yml@v1
+    uses: ./.github/workflows/select-docs.yml
     permissions:
       contents: read
       id-token: write
     with:
-      artifact-name: docs-${{ github.sha }}
-      immutable-assets: false
-      terraform-version: '1.15.9'
-      terraform-workdir: tf
-      aws-region: ${{ vars.AWS_REGION }}
-      terraform-state-bucket: ${{ vars.TF_STATE_BUCKET }}
-      terraform-state-key: ${{ vars.TF_STATE_KEY }}
-      terraform-state-region: ${{ vars.TF_STATE_REGION }}
-      terraform-role-arn: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
-      domain-name: ${{ vars.SITE_DOMAIN_NAME }}
-      site-bucket-name: ${{ vars.SITE_BUCKET_NAME }}
-      acm-certificate-arn: ${{ vars.SITE_ACM_CERTIFICATE_ARN }}
+      docs-ref: ${{ github.sha }}
+
+  build:
+    needs: sources
+    uses: ./.github/workflows/build-docs.yml
+    with:
+      docs-ref: ${{ needs.sources.outputs.docs-ref }}
+      client-tag: ${{ needs.sources.outputs.client-tag }}
+      modules-tag: ${{ needs.sources.outputs.modules-tag }}
+      artifact-name: docs-current
+
+  infrastructure:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      distribution-id: ${{ steps.site.outputs.distribution-id }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Apply site infrastructure
+        id: apply
+        uses: mr-chelyshkin/actions/terraform-apply@v1
+        env:
+          TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+          TF_VAR_domain_name: ${{ vars.SITE_DOMAIN_NAME }}
+          TF_VAR_site_bucket_name: ${{ vars.SITE_BUCKET_NAME }}
+          TF_VAR_acm_certificate_arn: ${{ vars.SITE_ACM_CERTIFICATE_ARN }}
+        with:
+          version: '1.15.9'
+          workdir: tf
+          backend-bucket: ${{ vars.TF_STATE_BUCKET }}
+          backend-key: ${{ vars.TF_STATE_KEY }}
+          backend-region: ${{ vars.TF_STATE_REGION }}
+      - name: Read CloudFront distribution
+        id: site
+        env:
+          TF_OUTPUTS: ${{ steps.apply.outputs.outputs }}
+        run: |
+          distribution_id=$(jq -er '.cloudfront_distribution_id.value' <<< "$TF_OUTPUTS")
+          printf 'distribution-id=%s\n' "$distribution_id" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: infrastructure
+    uses: ./.github/workflows/publish-docs.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      distribution-id: ${{ needs.infrastructure.outputs.distribution-id }}
