@@ -3,6 +3,10 @@ name: Build documentation
 on:
   workflow_call:
     inputs:
+      docs-ref:
+        description: Published docs source to build. Empty uses this workflow's commit.
+        type: string
+        default: ''
       client-tag:
         description: Client release to include. Empty builds internal documentation.
         type: string
@@ -15,6 +19,10 @@ on:
         description: Artifact to upload. Empty skips the upload.
         type: string
         default: ''
+      snapshot:
+        description: Package an immutable client version instead of the current site.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -25,13 +33,25 @@ jobs:
     env:
       CLIENT_TAG: ${{ inputs.client-tag }}
       MODULES_TAG: ${{ inputs.modules-tag }}
+      DOCS_OUTPUT: ${{ inputs.snapshot && format('build/docs/{0}', inputs.client-tag) || 'build/docs' }}
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ inputs.docs-ref || github.sha }}
           persist-credentials: false
+
+      - name: Check build inputs
+        env:
+          SNAPSHOT: ${{ inputs.snapshot }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$CLIENT_TAG" || -n "$MODULES_TAG" || "$SNAPSHOT" == true ]]; then
+            [[ "$CLIENT_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(\+[1-9][0-9]*)?$ ]]
+            [[ "$MODULES_TAG" =~ ^v[1-9][0-9]*$ ]]
+          fi
 
       - name: Verify published releases
         if: inputs.client-tag != ''
@@ -86,14 +106,19 @@ jobs:
         with:
           command: >-
             ci/docs DOCS='build/sources/client build/sources/modules'
-            DOCS_OUTPUT='build/docs/${{ inputs.client-tag }}'
+            DOCS_OUTPUT='${{ env.DOCS_OUTPUT }}'
 
       - name: Record release versions
-        if: inputs.client-tag != ''
+        if: inputs.artifact-name != ''
+        env:
+          SNAPSHOT: ${{ inputs.snapshot }}
         run: |
+          set -euo pipefail
           jq -n --arg client_tag "$CLIENT_TAG" --arg modules_tag "$MODULES_TAG" \
-            '{client_tag: $client_tag, modules_tag: $modules_tag}' \
-            > "build/docs/$CLIENT_TAG/release.json"
+            --arg docs_sha "$(git rev-parse HEAD)" --argjson snapshot "$SNAPSHOT" '
+            {client_tag: $client_tag, modules_tag: $modules_tag} +
+            if $snapshot then {} else {docs_sha: $docs_sha} end
+          ' > "$DOCS_OUTPUT/release.json"
 
       - name: Upload documentation
         if: inputs.artifact-name != ''

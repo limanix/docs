@@ -1,0 +1,115 @@
+name: Select documentation versions
+
+on:
+  workflow_call:
+    inputs:
+      docs-ref:
+        description: Released docs commit. Empty keeps the published docs commit.
+        type: string
+        default: ''
+      releases:
+        description: Client and module tag pairs being published.
+        type: string
+        default: '[]'
+    outputs:
+      docs-ref:
+        value: ${{ jobs.select.outputs.docs-ref }}
+      client-tag:
+        value: ${{ jobs.select.outputs.client-tag }}
+      modules-tag:
+        value: ${{ jobs.select.outputs.modules-tag }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  select:
+    runs-on: ubuntu-24.04
+    outputs:
+      docs-ref: ${{ steps.versions.outputs.docs-ref }}
+      client-tag: ${{ steps.versions.outputs.client-tag }}
+      modules-tag: ${{ steps.versions.outputs.modules-tag }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Select published source versions
+        id: versions
+        shell: bash
+        env:
+          SITE_BUCKET_NAME: ${{ vars.SITE_BUCKET_NAME }}
+          DOCS_REF: ${{ inputs.docs-ref }}
+          RELEASES: ${{ inputs.releases }}
+        run: |
+          set -euo pipefail
+          requested_docs_ref=$DOCS_REF
+          selection_dir=$(mktemp -d "$RUNNER_TEMP/docs-selection.XXXXXX")
+          touch "$selection_dir/releases.jsonl"
+
+          if ! aws s3api list-objects-v2 --bucket "$SITE_BUCKET_NAME" --prefix client/ \
+            --output json > "$selection_dir/objects.json" 2> "$selection_dir/aws-error"; then
+            if [[ $(< "$selection_dir/aws-error") != *'(NoSuchBucket)'* ]]; then
+              cat "$selection_dir/aws-error" >&2
+              exit 1
+            fi
+            if [[ -z "$DOCS_REF" ]]; then
+              echo 'Publish a docs tag first: the documentation bucket does not exist.' >&2
+              exit 1
+            fi
+            printf '{"Contents":[]}\n' > "$selection_dir/objects.json"
+          fi
+
+          if [[ -z "$DOCS_REF" ]]; then
+            if ! aws s3api get-object --bucket "$SITE_BUCKET_NAME" --key release.json \
+              "$selection_dir/current.json" > /dev/null 2> "$selection_dir/aws-error"; then
+              if [[ $(< "$selection_dir/aws-error") == *'(NoSuchKey)'* ]]; then
+                echo 'Publish a docs tag first: the published docs commit is not recorded.' >&2
+              else
+                cat "$selection_dir/aws-error" >&2
+              fi
+              exit 1
+            fi
+            DOCS_REF=$(jq -er '.docs_sha | strings' "$selection_dir/current.json")
+          fi
+          if [[ ! "$DOCS_REF" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo 'The docs source must be a full commit SHA.' >&2
+            exit 1
+          fi
+
+          jq -r '.Contents[]?.Key | select(test("^client/[^/]+/release\\.json$"))' \
+            "$selection_dir/objects.json" > "$selection_dir/receipts"
+          while IFS= read -r key; do
+            aws s3api get-object --bucket "$SITE_BUCKET_NAME" --key "$key" \
+              "$selection_dir/receipt.json" > /dev/null
+            client_tag=${key#client/}
+            client_tag=${client_tag%/release.json}
+            jq -e --arg tag "$client_tag" '.client_tag == $tag' \
+              "$selection_dir/receipt.json" > /dev/null
+            jq -c . "$selection_dir/receipt.json" >> "$selection_dir/releases.jsonl"
+          done < "$selection_dir/receipts"
+
+          jq -s --argjson incoming "$RELEASES" '
+            . + $incoming |
+            if all(.[];
+              type == "object" and keys == ["client_tag", "modules_tag"] and
+              (.client_tag | type == "string" and test("^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(\\+[1-9][0-9]*)?\\z")) and
+              (.modules_tag | type == "string" and test("^v[1-9][0-9]*\\z"))
+            ) then unique else error("Invalid published client and module tags") end |
+            if any(group_by(.client_tag)[]; length != 1)
+            then error("Conflicting module versions for a client release") else . end |
+            sort_by(.client_tag | [scan("[0-9]+") | [length, .]]) |
+            last // {client_tag: "", modules_tag: ""}
+          ' "$selection_dir/releases.jsonl" > "$selection_dir/selected.json"
+
+          client_tag=$(jq -r '.client_tag' "$selection_dir/selected.json")
+          modules_tag=$(jq -r '.modules_tag' "$selection_dir/selected.json")
+          if [[ -z "$client_tag" && -z "$requested_docs_ref" ]]; then
+            echo 'No completed or incoming client release is available.' >&2
+            exit 1
+          fi
+          printf 'docs-ref=%s\nclient-tag=%s\nmodules-tag=%s\n' \
+            "$DOCS_REF" "$client_tag" "$modules_tag" >> "$GITHUB_OUTPUT"
