@@ -1,7 +1,6 @@
 function handler(event) {
   const request = event.request;
 
-  // Archived client versions live under /client/<tag>/; the current one is the site root.
   if (request.uri === '/client/' || request.uri === '/client/index.html') {
     return {
       statusCode: 302,
