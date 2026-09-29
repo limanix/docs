@@ -41,6 +41,7 @@ jobs:
         with:
           pattern: docs-*
           path: build/sites
+          merge-multiple: true
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
