@@ -53,6 +53,7 @@ Links between those guides stay within the selected site version.
 | Client release event | Deployed docs commit and the published client/modules pairs | Client archives and updated current site |
 
 `release.yml` and `events.yml` use `_select.yml`, `_build.yml`, and `_publish.yml` to select sources, build the site, and publish it.
+`scripts/releases.py` decides which versions to build and which archives and catalog to upload; the workflows only transfer files.
 Release builds download the products' prepared documentation from GitHub Releases.
 The version switcher links the current site and saved client versions under `/client/<tag>/`.
 Existing archives stay unchanged.

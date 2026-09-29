@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       docs-ref:
-        description: Docs commit to publish.
+        description: Docs commit to publish. Empty keeps the deployed commit.
         type: string
         default: ''
       releases:
@@ -31,60 +31,33 @@ jobs:
   select:
     runs-on: ubuntu-24.04
     outputs:
-      docs-ref: ${{ steps.versions.outputs.docs-ref }}
-      client-tag: ${{ steps.versions.outputs.client-tag }}
-      modules-tag: ${{ steps.versions.outputs.modules-tag }}
-      releases: ${{ steps.versions.outputs.releases }}
-      builds: ${{ steps.versions.outputs.builds }}
+      docs-ref: ${{ steps.select.outputs.docs-ref }}
+      client-tag: ${{ steps.select.outputs.client-tag }}
+      modules-tag: ${{ steps.select.outputs.modules-tag }}
+      releases: ${{ steps.select.outputs.releases }}
+      builds: ${{ steps.select.outputs.builds }}
     steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-      - name: Select sources
-        id: versions
-        shell: bash
+      - name: Download receipts
         env:
-          SITE_BUCKET_NAME: ${{ vars.SITE_BUCKET_NAME }}
+          BUCKET: s3://${{ vars.SITE_BUCKET_NAME }}
+        run: >-
+          aws s3 sync "$BUCKET/" build/deployed --only-show-errors
+          --exclude '*' --include release.json --include 'client/*/release.json'
+      - name: Select sources
+        id: select
+        env:
           DOCS_REF: ${{ inputs.docs-ref }}
           RELEASES: ${{ inputs.releases }}
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-
-          releases=$(jq -ce '
-            if type == "array" and all(.[];
-              (.client_tag | test("^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(\\+[1-9][0-9]*)?\\z")) and
-              (.modules_tag | test("^v[1-9][0-9]*\\z"))
-            ) then map({client_tag, modules_tag}) | unique
-            else error("Expected client and module release pairs") end
-          ' <<< "$RELEASES")
-          if [[ -z "$DOCS_REF" && "$releases" == '[]' ]]; then
-            echo 'The client event contains no releases.' >&2
-            exit 1
-          fi
-
-          receipts="$RUNNER_TEMP/receipts"
-          mkdir -p "$receipts"
-          if ! aws s3 sync "s3://$SITE_BUCKET_NAME/client/" "$receipts" \
-            --exclude '*' --include '*/release.json' --only-show-errors 2> "$RUNNER_TEMP/s3-error"; then
-            # The first docs release creates its bucket after building the site.
-            if [[ -z "$DOCS_REF" ]] || ! grep -q '(NoSuchBucket)' "$RUNNER_TEMP/s3-error"; then
-              cat "$RUNNER_TEMP/s3-error" >&2
-              exit 1
-            fi
-          fi
-          if [[ -z "$DOCS_REF" ]]; then
-            DOCS_REF=$(aws s3 cp "s3://$SITE_BUCKET_NAME/release.json" - --only-show-errors | jq -er '.docs_sha')
-          fi
-
-          files=("$receipts"/*/release.json)
-          current=$(jq -cs --argjson releases "$releases" '
-            . + $releases | unique | group_by(.client_tag) |
-            map(if length == 1 then .[0] else error("Conflicting module versions") end) |
-            max_by(.client_tag | [scan("[0-9]+") | tonumber]) // {client_tag: "", modules_tag: ""}
-          ' "${files[@]}" < /dev/null)
-          builds=$(jq -cn --argjson releases "$releases" --argjson current "$current" '$releases + [$current] | unique')
-          printf 'docs-ref=%s\nclient-tag=%s\nmodules-tag=%s\nreleases=%s\nbuilds=%s\n' \
-            "$DOCS_REF" "$(jq -r .client_tag <<< "$current")" "$(jq -r .modules_tag <<< "$current")" \
-            "$releases" "$builds" >> "$GITHUB_OUTPUT"
+        run: >-
+          python scripts/releases.py select --deployed build/deployed
+          --docs-ref "$DOCS_REF" --incoming "$RELEASES" >> "$GITHUB_OUTPUT"

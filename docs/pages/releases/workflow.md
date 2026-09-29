@@ -131,8 +131,9 @@ Sending the same modules event again selects clients again and increments their 
 <summary>Follow a shared documentation release</summary>
 
 1. The docs workflow validates its tag and checks that its commit belongs to `main`.
-2. It combines the tagged shared pages and theme with the highest completed client documentation version and its modules tag.
-3. It applies the site infrastructure and publishes the current site at `/`.
+2. It applies the site infrastructure.
+3. It combines the tagged shared pages and theme with the highest completed client documentation version and its modules tag.
+4. It publishes the current site at `/`.
 
 If no product documentation has been published yet, the release builds shared pages only.
 Existing client archives stay unchanged.

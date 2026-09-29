@@ -28,26 +28,8 @@ jobs:
         with:
           branch: main
 
-  sources:
-    needs: verify
-    uses: ./.github/workflows/_select.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      docs-ref: ${{ github.sha }}
-
-  build:
-    needs: sources
-    uses: ./.github/workflows/_build.yml
-    with:
-      docs-ref: ${{ needs.sources.outputs.docs-ref }}
-      client-tag: ${{ needs.sources.outputs.client-tag }}
-      modules-tag: ${{ needs.sources.outputs.modules-tag }}
-      artifact-name: docs-${{ needs.sources.outputs.client-tag || 'current' }}
-
   infrastructure:
-    needs: build
+    needs: verify
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -85,8 +67,26 @@ jobs:
           distribution_id=$(jq -er '.cloudfront_distribution_id.value' <<< "$TF_OUTPUTS")
           printf 'distribution-id=%s\n' "$distribution_id" >> "$GITHUB_OUTPUT"
 
+  sources:
+    needs: infrastructure
+    uses: ./.github/workflows/_select.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      docs-ref: ${{ github.sha }}
+
+  build:
+    needs: sources
+    uses: ./.github/workflows/_build.yml
+    with:
+      docs-ref: ${{ needs.sources.outputs.docs-ref }}
+      client-tag: ${{ needs.sources.outputs.client-tag }}
+      modules-tag: ${{ needs.sources.outputs.modules-tag }}
+      artifact-name: docs-${{ needs.sources.outputs.client-tag || 'current' }}
+
   publish:
-    needs: [sources, infrastructure]
+    needs: [infrastructure, sources, build]
     uses: ./.github/workflows/_publish.yml
     permissions:
       contents: read
