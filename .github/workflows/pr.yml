@@ -20,7 +20,7 @@ jobs:
       contents: read
       id-token: write
     with:
-      terraform-role-arn: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
+      terraform-role-arn: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
       aws-region: ${{ vars.AWS_REGION }}
       environment: |
         {
