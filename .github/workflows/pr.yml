@@ -37,12 +37,9 @@ jobs:
     name: static ci
     uses: mr-chelyshkin/actions/.github/workflows/pr-static-site.yml@v1
 
-  docs:
-    uses: ./.github/workflows/_build.yml
-
   gate:
     if: always()
-    needs: [terraform-ci, static-ci, docs]
+    needs: [terraform-ci, static-ci]
     runs-on: ubuntu-24.04
     permissions:
       contents: read

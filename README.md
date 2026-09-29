@@ -10,12 +10,12 @@ Run from this repository with Task and Docker available:
 
 ```bash
 task --yes ci/fmt ci/lint ci/test
-task --yes ci/docs
-task --yes ci/docs CLIENT_ROOT=../client MODULES_ROOT=../modules
+task --yes ci/static-build
+task --yes ci/static-build CLIENT_ROOT=../client MODULES_ROOT=../modules
 task --yes docs/serve CLIENT_ROOT=../client MODULES_ROOT=../modules
 ```
 
-`ci/docs` without product inputs builds the shared pages, as in the docs PR workflow.
+`ci/static-build` without product inputs builds the shared pages, as in the docs PR workflow.
 With both products, it also includes client guides, generated CLI and configuration references, module guides, and module READMEs.
 `docs/serve` rebuilds when the shared pages or product sources change.
 Open <http://127.0.0.1:8040>, or set `DOCS_PORT` to use another port.
@@ -33,8 +33,8 @@ Prepared inputs must contain `index.md` at their root.
 For example:
 
 ```bash
-task --yes ci/docs CLIENT_ROOT=../client MODULES_DOCS=../modules/build/docs
-task --yes ci/docs CLIENT_DOCS=build/inputs/client/docs.tar.gz MODULES_DOCS=build/inputs/modules/docs.tar.gz
+task --yes ci/static-build CLIENT_ROOT=../client MODULES_DOCS=../modules/build/docs
+task --yes ci/static-build CLIENT_DOCS=build/inputs/client/docs.tar.gz MODULES_DOCS=build/inputs/modules/docs.tar.gz
 ```
 
 `DOCS_OUTPUT` defaults to `build/docs`; other output directories must also be under `build/`.

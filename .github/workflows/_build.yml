@@ -52,7 +52,7 @@ jobs:
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
           command: >-
-            ci/docs
+            ci/static-build
             ${{ inputs.client-tag != '' && 'CLIENT_DOCS=build/inputs/client/docs.tar.gz MODULES_DOCS=build/inputs/modules/docs.tar.gz' || '' }}
       - name: Check version
         if: inputs.client-tag != ''

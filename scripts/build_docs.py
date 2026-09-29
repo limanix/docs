@@ -12,7 +12,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PAGES = ROOT / "build" / "docs-pages"
-SITE_GUIDE_LINK = re.compile(r"\]\(https://limanix\.dev/categories/(client|nixos)/([\w/-]+)\.html(#[^\s)]*)?\)")
+SITE_GUIDE_LINK = re.compile(
+    r"\]\(https://limanix\.dev/categories/(client|nixos)/([\w/-]+)\.html(#[^\s)]*)?\)"
+)
 
 
 def copy_prepared(source: Path, destination: Path, name: str) -> None:

@@ -59,14 +59,14 @@ From `docs`, with Task and Docker available:
 
 ```bash
 task --yes ci/fmt ci/lint ci/test
-task --yes ci/docs
+task --yes ci/static-build
 ```
 
-`ci/docs` builds the shared pages, matching the docs PR check.
+`ci/static-build` builds the shared pages, matching the docs PR check.
 To include the product guides, point to the sibling repositories:
 
 ```bash
-task --yes ci/docs CLIENT_ROOT=../client MODULES_ROOT=../modules
+task --yes ci/static-build CLIENT_ROOT=../client MODULES_ROOT=../modules
 task --yes docs/serve CLIENT_ROOT=../client MODULES_ROOT=../modules
 ```
 

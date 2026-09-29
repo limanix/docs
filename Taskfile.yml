@@ -68,7 +68,7 @@ tasks:
             -backend-config=use_lockfile=true
             -backend-config=encrypt=true
 
-  ci/docs:
+  ci/static-build:
     desc: Build docs
     vars:
       output: '{{.DOCS_OUTPUT | default "build/docs"}}'
@@ -82,6 +82,23 @@ tasks:
           CMD: uv run --locked --group docs sh -eu -c {{.build | shellQuote}}
           CONTAINER_ENVS: CLIENT_TAG MODULES_TAG
           CONTAINER_VOLUMES: '{{.docs_volumes}}'
+
+  ci/static-audit:
+    desc: Run Python audit
+    cmds:
+      - task: python:_uv/tool
+        vars:
+          CMD: uv audit --locked --preview-features audit-command
+
+  ci/static-test:
+    desc: Run Python checks
+    cmds:
+      - task: python:fmt
+        vars:
+          FMT_ARGS: --check scripts docs/conf.py
+      - task: python:lint
+        vars:
+          LINT_ARGS: scripts docs/conf.py
 
   docs/serve:
     desc: Serve docs with live rebuilds
