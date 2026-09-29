@@ -1,0 +1,47 @@
+name: Events flow
+
+on:
+  repository_dispatch:
+    types: [client-release]
+
+concurrency:
+  group: release
+  queue: max
+
+permissions:
+  contents: read
+
+jobs:
+  sources:
+    uses: ./.github/workflows/_select.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      releases: ${{ toJSON(github.event.client_payload.releases) }}
+
+  build:
+    name: Build ${{ matrix.client_tag }}
+    needs: sources
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.sources.outputs.builds) }}
+    uses: ./.github/workflows/_build.yml
+    with:
+      docs-ref: ${{ needs.sources.outputs.docs-ref }}
+      client-tag: ${{ matrix.client_tag }}
+      modules-tag: ${{ matrix.modules_tag }}
+      artifact-name: docs-${{ matrix.client_tag }}
+
+  publish:
+    needs: [sources, build]
+    uses: ./.github/workflows/_publish.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      distribution-id: ${{ vars.AWS_CLOUDFRONT_DISTRIBUTION_ID }}
+      docs-ref: ${{ needs.sources.outputs.docs-ref }}
+      client-tag: ${{ needs.sources.outputs.client-tag }}
+      releases: ${{ needs.sources.outputs.releases }}

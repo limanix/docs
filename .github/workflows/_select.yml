@@ -1,0 +1,63 @@
+name: Select docs versions
+
+on:
+  workflow_call:
+    inputs:
+      docs-ref:
+        description: Docs commit to publish. Empty keeps the deployed commit.
+        type: string
+        default: ''
+      releases:
+        description: Incoming client and module tag pairs.
+        type: string
+        default: '[]'
+    outputs:
+      docs-ref:
+        value: ${{ jobs.select.outputs.docs-ref }}
+      client-tag:
+        value: ${{ jobs.select.outputs.client-tag }}
+      modules-tag:
+        value: ${{ jobs.select.outputs.modules-tag }}
+      releases:
+        value: ${{ jobs.select.outputs.releases }}
+      builds:
+        value: ${{ jobs.select.outputs.builds }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  select:
+    runs-on: ubuntu-24.04
+    outputs:
+      docs-ref: ${{ steps.select.outputs.docs-ref }}
+      client-tag: ${{ steps.select.outputs.client-tag }}
+      modules-tag: ${{ steps.select.outputs.modules-tag }}
+      releases: ${{ steps.select.outputs.releases }}
+      builds: ${{ steps.select.outputs.builds }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Download receipts
+        env:
+          BUCKET: s3://${{ vars.SITE_BUCKET_NAME }}
+        run: >-
+          aws s3 sync "$BUCKET/" build/deployed --only-show-errors
+          --exclude '*' --include release.json --include 'client/*/release.json'
+      - name: Select sources
+        id: select
+        env:
+          DOCS_REF: ${{ inputs.docs-ref }}
+          RELEASES: ${{ inputs.releases }}
+        run: >-
+          python scripts/releases.py select --deployed build/deployed
+          --docs-ref "$DOCS_REF" --incoming "$RELEASES" >> "$GITHUB_OUTPUT"

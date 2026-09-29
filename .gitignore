@@ -1,5 +1,4 @@
-# Local environment and private VM configurations
-/vm/
+# Local environment
 .env
 .env.*
 
@@ -7,9 +6,6 @@
 __pycache__/
 /build/
 /.venv/
-
-# Documentation mount points
-/docs/pages/projects/
 
 # Task runner cache
 /.cache/

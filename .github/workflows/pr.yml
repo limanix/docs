@@ -6,24 +6,44 @@ on:
     types: [opened, reopened, synchronize]
 
 concurrency:
-  group: pr-flow-${{ github.event.pull_request.number }}
+  group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  docs:
-    uses: ./.github/workflows/build-docs.yml
+  terraform-ci:
+    name: terraform ci
+    uses: mr-chelyshkin/actions/.github/workflows/pr-terraform.yml@v1
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      terraform-role-arn: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
+      aws-region: ${{ vars.AWS_REGION }}
+      environment: |
+        {
+          "TF_STATE_KEY": ${{ toJSON(vars.TF_STATE_KEY) }},
+          "TF_VAR_aws_region": ${{ toJSON(vars.AWS_REGION) }},
+          "TF_STATE_REGION": ${{ toJSON(vars.TF_STATE_REGION) }},
+          "TF_STATE_BUCKET": ${{ toJSON(vars.TF_STATE_BUCKET) }},
+          "TF_VAR_domain_name": ${{ toJSON(vars.SITE_DOMAIN_NAME) }},
+          "TF_VAR_site_bucket_name": ${{ toJSON(vars.SITE_BUCKET_NAME) }},
+          "TF_VAR_acm_certificate_arn": ${{ toJSON(vars.SITE_ACM_CERTIFICATE_ARN) }}
+        }
+
+  static-ci:
+    name: static ci
+    uses: mr-chelyshkin/actions/.github/workflows/pr-static-site.yml@v1
 
   gate:
     if: always()
-    needs: [docs]
+    needs: [terraform-ci, static-ci]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
       - uses: mr-chelyshkin/actions/check-job-results@v1
         with:
           results: ${{ toJSON(needs) }}

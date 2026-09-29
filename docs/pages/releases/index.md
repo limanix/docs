@@ -5,19 +5,14 @@ This guide follows your contribution from PR checks to binaries and published do
 
 ```mermaid
 flowchart TD
-    accTitle: From a contribution to a release
-    accDescr: After PR checks and merge, client and modules releases publish product documentation, and a docs tag updates shared pages and the theme; both paths update one current site while client release snapshots remain available as archives.
-    pr["Pull request"] --> checks["Checks + review"] --> merge["Merge to main"]
-    merge --> client["Client tag"]
-    merge --> modules["Modules tag"]
-    merge --> docs["Docs tag"]
-    modules --> rebuild["Rebuild up to 3 client versions"]
-    client --> release["Client release"]
-    rebuild --> release
+    accTitle: From a contribution to published documentation
+    accDescr: Client and modules tags produce client releases whose documentation updates the site and archives. Docs tags update the current site's shared pages and theme.
+    client["Client tag"] --> release["Client release"]
+    modules["Modules tag"] --> rebuild["Rebuild selected clients"] --> release
     release --> productdocs["Client + module documentation"]
     productdocs --> snapshot["Saved client versions"]
     productdocs --> site["Current complete site at /"]
-    docs --> site
+    docs["Docs tag"] --> site
 ```
 
 The current site combines shared pages, client guides, module guides, and generated references in one navigation and search.
@@ -27,8 +22,8 @@ The version switcher opens earlier client and module snapshots.
 
 | Your change | Repository | Documentation beside it |
 |-------------|------------|--------------------------|
-| CLI, configuration, or VM behavior | `client` | `docs/` |
-| Module code, defaults, or metadata | `modules` | `docs/` |
+| CLI, configuration, or VM behavior | `client` | `guides/` |
+| Module code, defaults, or metadata | `modules` | `guides/` and `catalog/*/README.md` |
 | Shared pages, theme, or navigation | `docs` | `docs/pages/` and `docs/conf.py` |
 
 Update product guides in the repository that owns the behavior.

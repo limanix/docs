@@ -18,9 +18,7 @@ root_doc = "index"
 nitpicky = True
 smartquotes = False
 
-exclude_patterns = ["projects/*/_generated/**"]
-if not client_tag:
-    exclude_patterns.append("projects/client/reference/**")
+exclude_patterns = ["categories/client/generated/**"]
 
 # HTML appearance
 html_theme = "sphinx_book_theme"
@@ -32,7 +30,21 @@ html_theme_options = {
 }
 
 html_static_path = ["_static"]
-html_css_files = ["mermaid.css", "toolbar.css"]
+html_css_files = [
+    "mermaid.css",
+    "toolbar.css",
+    "vendor/prism/prism-line-numbers.css",
+    "vendor/prism/prism-line-highlight.css",
+    "code-examples.css",
+]
+html_js_files = [
+    ("vendor/prism/prism-core.min.js", {"data-manual": ""}),
+    "vendor/prism/prism-nix.min.js",
+    "vendor/prism/prism-toml.min.js",
+    "vendor/prism/prism-line-numbers.min.js",
+    "vendor/prism/prism-line-highlight.min.js",
+    "code-examples.js",
+]
 html_show_sourcelink = False
 html_use_index = False
 
@@ -55,7 +67,9 @@ if client_tag:
         ]
     }
 
-# Mermaid diagrams
+# Markdown extensions and Mermaid diagrams
+myst_heading_anchors = 3
+myst_enable_extensions = ["alert", "attrs_inline"]
 myst_fence_as_directive = ["mermaid"]
 mermaid_version = "11.12.1"
 mermaid_fullscreen = False

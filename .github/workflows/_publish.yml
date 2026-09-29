@@ -1,0 +1,91 @@
+name: Publish docs
+
+on:
+  workflow_call:
+    inputs:
+      distribution-id:
+        description: CloudFront distribution serving the documentation.
+        type: string
+        required: true
+      docs-ref:
+        description: Docs commit used by the build.
+        type: string
+        required: true
+      client-tag:
+        description: Client version published at the site root, or empty for shared pages.
+        type: string
+        required: true
+      releases:
+        description: Incoming client and module pairs to archive.
+        type: string
+        default: '[]'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    env:
+      BUCKET: s3://${{ vars.SITE_BUCKET_NAME }}
+      CURRENT_SITE: build/sites/docs-${{ inputs.client-tag || 'current' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: docs-*
+          path: build/sites
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Download receipts
+        run: >-
+          aws s3 sync "$BUCKET/" build/deployed --only-show-errors
+          --exclude '*' --include release.json --include 'client/*/release.json'
+      - name: Check sites
+        id: check
+        env:
+          DOCS_REF: ${{ inputs.docs-ref }}
+          CLIENT_TAG: ${{ inputs.client-tag }}
+          RELEASES: ${{ inputs.releases }}
+        run: >-
+          python scripts/releases.py publish --deployed build/deployed --sites build/sites
+          --docs-ref "$DOCS_REF" --client-tag "$CLIENT_TAG" --incoming "$RELEASES"
+          --output build/publish >> "$GITHUB_OUTPUT"
+
+      - name: Upload archives
+        env:
+          ARCHIVES: ${{ steps.check.outputs.archives }}
+        run: |
+          for tag in $ARCHIVES; do
+            aws s3 sync "build/sites/docs-$tag/" "$BUCKET/client/$tag/" \
+              --exclude release.json --delete --no-follow-symlinks --only-show-errors
+            aws s3 cp "build/publish/client/$tag/release.json" "$BUCKET/client/$tag/release.json" \
+              --content-type application/json --only-show-errors
+          done
+      - name: Upload current site
+        run: |
+          aws s3 sync "$CURRENT_SITE/" "$BUCKET/" \
+            --exclude 'client/*' --exclude index.html --exclude release.json \
+            --delete --no-follow-symlinks --cache-control no-cache --only-show-errors
+          aws s3 cp "$CURRENT_SITE/index.html" "$BUCKET/index.html" \
+            --content-type 'text/html; charset=utf-8' --cache-control no-cache --only-show-errors
+      - name: Upload catalog
+        run: >-
+          aws s3 cp build/publish/versions.json "$BUCKET/client/versions.json"
+          --content-type application/json --cache-control no-cache --only-show-errors
+      - name: Mark release complete
+        run: >-
+          aws s3 cp "$CURRENT_SITE/release.json" "$BUCKET/release.json"
+          --content-type application/json --cache-control no-cache --only-show-errors
+      - uses: mr-chelyshkin/actions/aws-cloudfront-invalidate@v1
+        with:
+          distribution-id: ${{ inputs.distribution-id }}
+          paths: /*
