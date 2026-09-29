@@ -6,24 +6,40 @@ on:
     types: [opened, reopened, synchronize]
 
 concurrency:
-  group: pr-flow-${{ github.event.pull_request.number }}
+  group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
+  python:
+    name: Python ${{ matrix.check }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [fmt, lint, test]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ci/${{ matrix.check }}
+
   docs:
-    uses: ./.github/workflows/build-docs.yml
+    uses: ./.github/workflows/_build.yml
 
   gate:
     if: always()
-    needs: [docs]
+    needs: [python, docs]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
       - uses: mr-chelyshkin/actions/check-job-results@v1
         with:
           results: ${{ toJSON(needs) }}

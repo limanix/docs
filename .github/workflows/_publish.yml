@@ -1,0 +1,122 @@
+name: Publish documentation
+
+on:
+  workflow_call:
+    inputs:
+      distribution-id:
+        description: CloudFront distribution serving the documentation.
+        type: string
+        required: true
+      docs-ref:
+        description: Docs commit used by the build.
+        type: string
+        required: true
+      client-tag:
+        description: Client version published at the site root, or empty for shared pages.
+        type: string
+        required: true
+      releases:
+        description: Incoming client and module pairs to archive.
+        type: string
+        default: '[]'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: docs-*
+          path: build/sites
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Publish sites and version catalog
+        shell: bash
+        env:
+          SITE_BUCKET_NAME: ${{ vars.SITE_BUCKET_NAME }}
+          DOCS_REF: ${{ inputs.docs-ref }}
+          CLIENT_TAG: ${{ inputs.client-tag }}
+          RELEASES: ${{ inputs.releases }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          bucket="s3://$SITE_BUCKET_NAME"
+          current="build/sites/docs-${CLIENT_TAG:-current}"
+          receipts="$RUNNER_TEMP/receipts"
+          mkdir -p "$receipts"
+          test -f "$current/index.html"
+
+          if [[ "$RELEASES" != '[]' ]]; then
+            aws s3 cp "$bucket/release.json" - --only-show-errors |
+              jq -e --arg sha "$DOCS_REF" '.docs_sha == $sha' > /dev/null
+          fi
+          aws s3 sync "$bucket/client/" "$receipts" \
+            --exclude '*' --include '*/release.json' --only-show-errors
+
+          # Check existing archives before uploading any new version.
+          pending=()
+          while IFS= read -r tag; do
+            site="build/sites/docs-$tag"
+            receipt="$receipts/$tag/release.json"
+            test -f "$site/index.html"
+            if [[ -f "$receipt" ]]; then
+              jq -e --slurpfile built "$site/release.json" \
+                '. == ($built[0] | {client_tag, modules_tag})' "$receipt" > /dev/null
+            else
+              mkdir -p "$receipts/$tag"
+              jq '{client_tag, modules_tag}' "$site/release.json" > "$receipt"
+              pending+=("$tag")
+            fi
+          done < <(jq -r '.[].client_tag' <<< "$RELEASES")
+
+          files=("$receipts"/*/release.json)
+          jq -s --arg current "$CLIENT_TAG" '
+            sort_by(.client_tag | [scan("[0-9]+") | tonumber]) | reverse |
+            if (.[0].client_tag // "") != $current then error("Current client version changed; rerun all jobs") else . end |
+            to_entries | map({
+              name: "\(.value.client_tag) · modules \(.value.modules_tag)",
+              version: .value.client_tag,
+              url: (if .key == 0 then "/" else "/client/\(.value.client_tag | @uri)/" end)
+            } + if .key == 0 then {preferred: true} else {} end)
+          ' "${files[@]}" < /dev/null > "$RUNNER_TEMP/versions.json"
+
+          for tag in "${pending[@]}"; do
+            aws s3 sync "build/sites/docs-$tag/" "$bucket/client/$tag/" \
+              --exclude release.json --delete --no-follow-symlinks --only-show-errors
+            aws s3 cp "$receipts/$tag/release.json" "$bucket/client/$tag/release.json" \
+              --content-type application/json --only-show-errors
+          done
+          aws s3 sync "$current/" "$bucket/" \
+            --exclude 'client/*' --exclude index.html --exclude release.json \
+            --delete --no-follow-symlinks --cache-control no-cache --only-show-errors
+          aws s3 cp "$current/index.html" "$bucket/index.html" \
+            --content-type 'text/html; charset=utf-8' --cache-control no-cache --only-show-errors
+          aws s3 cp "$RUNNER_TEMP/versions.json" "$bucket/client/versions.json" \
+            --content-type application/json --cache-control no-cache --only-show-errors
+          cat > "$RUNNER_TEMP/client-index.html" <<'HTML'
+          <!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <title>Limanix documentation</title>
+              <meta http-equiv="refresh" content="0; url=/">
+              <link rel="canonical" href="/">
+            </head>
+            <body><a href="/">Current documentation</a></body>
+          </html>
+          HTML
+          aws s3 cp "$RUNNER_TEMP/client-index.html" "$bucket/client/index.html" \
+            --content-type 'text/html; charset=utf-8' --cache-control no-cache --only-show-errors
+          # The receipt marks completion of the current site, so publish it last.
+          aws s3 cp "$current/release.json" "$bucket/release.json" \
+            --content-type application/json --cache-control no-cache --only-show-errors
+      - uses: mr-chelyshkin/actions/aws-cloudfront-invalidate@v1
+        with:
+          distribution-id: ${{ inputs.distribution-id }}
+          paths: /*

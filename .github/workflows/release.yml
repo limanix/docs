@@ -5,7 +5,7 @@ on:
     tags: ['v*.*.*']
 
 concurrency:
-  group: docs-release
+  group: release
   queue: max
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
 
   sources:
     needs: verify
-    uses: ./.github/workflows/select-docs.yml
+    uses: ./.github/workflows/_select.yml
     permissions:
       contents: read
       id-token: write
@@ -39,12 +39,12 @@ jobs:
 
   build:
     needs: sources
-    uses: ./.github/workflows/build-docs.yml
+    uses: ./.github/workflows/_build.yml
     with:
       docs-ref: ${{ needs.sources.outputs.docs-ref }}
       client-tag: ${{ needs.sources.outputs.client-tag }}
       modules-tag: ${{ needs.sources.outputs.modules-tag }}
-      artifact-name: docs-current
+      artifact-name: docs-${{ needs.sources.outputs.client-tag || 'current' }}
 
   infrastructure:
     needs: build
@@ -86,10 +86,12 @@ jobs:
           printf 'distribution-id=%s\n' "$distribution_id" >> "$GITHUB_OUTPUT"
 
   publish:
-    needs: infrastructure
-    uses: ./.github/workflows/publish-docs.yml
+    needs: [sources, infrastructure]
+    uses: ./.github/workflows/_publish.yml
     permissions:
       contents: read
       id-token: write
     with:
       distribution-id: ${{ needs.infrastructure.outputs.distribution-id }}
+      docs-ref: ${{ needs.sources.outputs.docs-ref }}
+      client-tag: ${{ needs.sources.outputs.client-tag }}

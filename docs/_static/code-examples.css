@@ -1,0 +1,102 @@
+/* Theme Prism examples with the site's light/dark palette. */
+.code-example {
+    --code-comment: #63748b;
+    --code-keyword: #7c3aed;
+    --code-string: #166534;
+    --code-number: #0369a1;
+    --code-function: #9a3412;
+    --code-range: rgb(37 99 235 / 12%);
+}
+
+html[data-theme="dark"] .code-example {
+    --code-comment: #94a3b8;
+    --code-keyword: #c4b5fd;
+    --code-string: #86efac;
+    --code-number: #7dd3fc;
+    --code-function: #fdba74;
+    --code-range: rgb(96 165 250 / 18%);
+}
+
+.code-example pre[class*="language-"] {
+    padding: 1em 1em 1em 3.8em;
+    border-radius: 0.5rem;
+    line-height: 1.65;
+    color: var(--pst-color-text-base);
+    background: var(--pst-color-surface);
+    tab-size: 2;
+    white-space: pre;
+}
+
+.code-example pre > code {
+    padding: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+}
+
+.code-example .line-numbers-rows {
+    border-right-color: var(--pst-color-border);
+}
+
+.code-example .line-numbers-rows > span::before {
+    color: var(--pst-color-text-muted);
+}
+
+.code-example .line-highlight {
+    margin-top: 1em;
+    background: var(--code-range);
+    box-shadow: inset 3px 0 var(--pst-color-primary);
+    scroll-margin-top: 5rem;
+}
+
+.code-example .token.comment { color: var(--code-comment); }
+.code-example .token.keyword,
+.code-example .token.boolean { color: var(--code-keyword); }
+.code-example .token.string,
+.code-example .token.url { color: var(--code-string); }
+.code-example .token.number { color: var(--code-number); }
+.code-example .token.function,
+.code-example .token.property { color: var(--code-function); }
+.code-example .token.operator,
+.code-example .token.punctuation { color: var(--pst-color-text-muted); }
+
+a.code-lines {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+a.code-lines-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
+    vertical-align: middle;
+    text-decoration: none;
+}
+
+a.code-lines-icon svg {
+    width: 1.125rem;
+    height: 1.125rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+a.code-lines-icon:hover,
+a.code-lines-icon:focus-visible {
+    color: var(--pst-color-primary);
+    background: var(--pst-color-primary-bg);
+}
+
+a.code-lines-icon:focus-visible {
+    outline: 2px solid var(--pst-color-primary);
+    outline-offset: 2px;
+}
+
+/* These fragments belong to the code on this page, despite MyST's class. */
+a.code-lines::after { display: none !important; }
