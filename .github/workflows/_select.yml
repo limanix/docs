@@ -1,10 +1,10 @@
-name: Select documentation versions
+name: Select docs versions
 
 on:
   workflow_call:
     inputs:
       docs-ref:
-        description: Docs commit to publish. Empty keeps the deployed docs commit.
+        description: Docs commit to publish.
         type: string
         default: ''
       releases:
@@ -41,7 +41,7 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-      - name: Select sources and builds
+      - name: Select sources
         id: versions
         shell: bash
         env:

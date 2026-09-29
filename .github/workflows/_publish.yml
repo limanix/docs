@@ -1,4 +1,4 @@
-name: Publish documentation
+name: Publish docs
 
 on:
   workflow_call:
@@ -36,7 +36,7 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-      - name: Publish sites and version catalog
+      - name: Publish catalog
         shell: bash
         env:
           SITE_BUCKET_NAME: ${{ vars.SITE_BUCKET_NAME }}

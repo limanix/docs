@@ -1,9 +1,11 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 version: '3.53.1'
+silent: true
 
 includes:
   terraform:
     taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.4/taskfiles/terraform/Taskfile.yml
+    internal: true
     vars:
       TERRAFORM_VERSION: '1.15.9'
       CONTAINER_ENVS: >-
@@ -13,40 +15,46 @@ includes:
     taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.4/taskfiles/python/Taskfile.yml
     internal: true
 
+vars:
+  CLIENT_ROOT:  '{{.CLIENT_ROOT  | default ""}}'
+  CLIENT_DOCS:  '{{.CLIENT_DOCS  | default ""}}'
+  CLIENT_TAG:   '{{.CLIENT_TAG   | default ""}}'
+  MODULES_ROOT: '{{.MODULES_ROOT | default ""}}'
+  MODULES_DOCS: '{{.MODULES_DOCS | default ""}}'
+  MODULES_REF:  '{{.MODULES_REF  | default ""}}'
+
+  client_docs: >-
+    {{if .CLIENT_ROOT}}{{joinPath .ROOT_DIR "build/client-docs/docs.tar.gz"}}
+    {{- else if isAbs .CLIENT_DOCS}}{{clean .CLIENT_DOCS}}
+    {{- else if .CLIENT_DOCS}}{{joinPath .ROOT_DIR .CLIENT_DOCS}}{{end}}
+  modules_docs: >-
+    {{if .MODULES_ROOT}}{{joinPath .ROOT_DIR "build/modules-docs/docs.tar.gz"}}
+    {{- else if isAbs .MODULES_DOCS}}{{clean .MODULES_DOCS}}
+    {{- else if .MODULES_DOCS}}{{joinPath .ROOT_DIR .MODULES_DOCS}}{{end}}
+
+  archive_tasks: '{{if .CLIENT_ROOT}}_docs/archive/client {{end}}{{if .MODULES_ROOT}}_docs/archive/modules{{end}}'
+
+  docs_volumes: >-
+    {{with .client_docs}}{{printf "%s:/inputs/client:ro" (dir .) | shellQuote}}{{end}}
+    {{with .modules_docs}}{{printf "%s:/inputs/modules:ro" (dir .) | shellQuote}}{{end}}
+  docs_prepare: >-
+    python scripts/build_docs.py
+    {{with .client_docs}}--client-docs {{printf "/inputs/client/%s" (base .) | shellQuote}}{{end}}
+    {{with .modules_docs}}--modules-docs {{printf "/inputs/modules/%s" (base .) | shellQuote}}{{end}}
+
 tasks:
-  ci/fmt:
-    desc: Check Python formatting
-    cmds:
-      - task: python:fmt
-        vars:
-          FMT_ARGS: '--check scripts tests docs/conf.py'
-
-  ci/lint:
-    desc: Lint Python scripts, tests, and Sphinx configuration
-    cmds:
-      - task: python:lint
-        vars:
-          LINT_ARGS: 'scripts tests docs/conf.py'
-
-  ci/test:
-    desc: Test documentation assembly
-    cmds:
-      - task: python:_uv/tool
-        vars:
-          CMD: uv run --locked python -m unittest discover -s tests -v
-
   ci/terraform-fmt:
-    desc: Check Terraform formatting
+    desc: Run Tf fmt check
     cmds:
       - task: terraform:fmt
 
   ci/terraform-validate:
-    desc: Validate Terraform without initializing the state backend
+    desc: Run Tf validate
     cmds:
       - task: terraform:validate
 
   ci/terraform-plan:
-    desc: Run Terraform plan
+    desc: Run Tf plan
     requires:
       vars: [TF_STATE_BUCKET, TF_STATE_KEY, TF_STATE_REGION]
     cmds:
@@ -61,137 +69,123 @@ tasks:
             -backend-config=encrypt=true
 
   ci/docs:
-    desc: Build documentation
-    vars: &docs_vars
-      client_root: '{{.CLIENT_ROOT | default ""}}'
-      client_docs: '{{if .CLIENT_ROOT}}build/client-docs/docs.tar.gz{{else}}{{.CLIENT_DOCS | default ""}}{{end}}'
-      modules_root: '{{.MODULES_ROOT | default ""}}'
-      modules_docs: '{{if .MODULES_ROOT}}build/modules-docs/docs.tar.gz{{else}}{{.MODULES_DOCS | default ""}}{{end}}'
-      docs_output: '{{.DOCS_OUTPUT | default "build/docs"}}'
-      docs_port: '{{.DOCS_PORT | default "8040"}}'
-      client_watch:
-        sh: >-
-          if test -d {{.client_docs | shellQuote}};
-          then printf '%s' {{printf "/inputs/client/%s" (base .client_docs) | shellQuote}};
-          else printf '%s' /inputs/client; fi
-      modules_watch:
-        sh: >-
-          if test -d {{.modules_docs | shellQuote}};
-          then printf '%s' {{printf "/inputs/modules/%s" (base .modules_docs) | shellQuote}};
-          else printf '%s' /inputs/modules; fi
-      prepare: >-
-        python scripts/build_docs.py
-        {{if .client_docs}}--client-docs {{printf "/inputs/client/%s" (base .client_docs) | shellQuote}}{{end}}
-        {{if .modules_docs}}--modules-docs {{printf "/inputs/modules/%s" (base .modules_docs) | shellQuote}}{{end}}
+    desc: Build docs
+    vars:
+      output: '{{.DOCS_OUTPUT | default "build/docs"}}'
       build: |
-        {{.prepare}} --clean-output {{.docs_output | shellQuote}}
-        exec sphinx-build -E -W --keep-going -b html -c docs build/docs-pages {{.docs_output | shellQuote}}
-    preconditions: &docs_preconditions
-      - sh: test -z {{.client_root | shellQuote}} || test -d {{.client_root | shellQuote}}
-        msg: CLIENT_ROOT must be an existing directory.
-      - sh: test -z {{.client_root | shellQuote}} || test -z {{.CLIENT_DOCS | default "" | shellQuote}}
-        msg: Set CLIENT_ROOT or CLIENT_DOCS, not both.
-      - sh: test -z {{.modules_root | shellQuote}} || test -d {{.modules_root | shellQuote}}
-        msg: MODULES_ROOT must be an existing directory.
-      - sh: test -z {{.modules_root | shellQuote}} || test -z {{.MODULES_DOCS | default "" | shellQuote}}
-        msg: Set MODULES_ROOT or MODULES_DOCS, not both.
-      - sh: |
-          { test -z {{.client_docs | shellQuote}} && test -z {{.modules_docs | shellQuote}}; } ||
-          { test -n {{.client_docs | shellQuote}} && test -n {{.modules_docs | shellQuote}}; }
-        msg: Pass CLIENT_ROOT or CLIENT_DOCS with MODULES_ROOT or MODULES_DOCS, or omit all four.
+        {{.docs_prepare}} --clean-output {{.output | shellQuote}}
+        exec sphinx-build -E -W --keep-going -b html -c docs build/docs-pages {{.output | shellQuote}}
     cmds:
-      - &prepare_roots |
-        {{if or .client_root .modules_root}}
-        task --yes --force _docs/prepare \
-          {{printf "CLIENT_ROOT=%s" .client_root | shellQuote}} {{printf "CLIENT_TAG=%s" (.CLIENT_TAG | default "") | shellQuote}} \
-          {{printf "MODULES_ROOT=%s" .modules_root | shellQuote}} {{printf "MODULES_REF=%s" (.MODULES_REF | default "") | shellQuote}}
-        {{end}}
+      - task: _docs/inputs
       - task: python:_uv/tool
         vars:
-          CONTAINER_ENVS: CLIENT_TAG MODULES_TAG
-          CONTAINER_VOLUMES: &docs_volumes >-
-            {{if .client_docs}}
-            {{$client := .client_docs}}{{if not (isAbs $client)}}{{$client = joinPath .ROOT_DIR $client | absPath}}{{end}}
-            {{printf "%s:/inputs/client:ro" (dir $client) | shellQuote}}{{end}}
-            {{if .modules_docs}}
-            {{$modules := .modules_docs}}{{if not (isAbs $modules)}}{{$modules = joinPath .ROOT_DIR $modules | absPath}}{{end}}
-            {{printf "%s:/inputs/modules:ro" (dir $modules) | shellQuote}}{{end}}
           CMD: uv run --locked --group docs sh -eu -c {{.build | shellQuote}}
+          CONTAINER_ENVS: CLIENT_TAG MODULES_TAG
+          CONTAINER_VOLUMES: '{{.docs_volumes}}'
 
   docs/serve:
-    desc: Serve documentation with automatic rebuilds
-    vars: *docs_vars
-    preconditions: *docs_preconditions
+    desc: Serve docs with live rebuilds
     cmds:
-      - *prepare_roots
-      - |
-        bash -eu <<'SCRIPT'
-        {{if or .client_root .modules_root}}
-        task --yes --watch --interval 1s _docs/prepare \
-          {{printf "CLIENT_ROOT=%s" .client_root | shellQuote}} {{printf "CLIENT_TAG=%s" (.CLIENT_TAG | default "") | shellQuote}} \
-          {{printf "MODULES_ROOT=%s" .modules_root | shellQuote}} {{printf "MODULES_REF=%s" (.MODULES_REF | default "") | shellQuote}} &
-        watcher_pid=$!
-        trap 'kill "$watcher_pid" 2>/dev/null || true; wait "$watcher_pid" 2>/dev/null || true' EXIT
-        trap 'exit 130' INT
-        trap 'exit 143' TERM
-        {{end}}
-        task --yes _docs/serve \
-          {{printf "CLIENT_DOCS=%s" .client_docs | shellQuote}} {{printf "MODULES_DOCS=%s" .modules_docs | shellQuote}} \
-          {{printf "CLIENT_TAG=%s" (.CLIENT_TAG | default "") | shellQuote}} \
-          {{printf "DOCS_PORT=%s" .docs_port | shellQuote}} CLIENT_ROOT= MODULES_ROOT=
-        SCRIPT
+      - task: _docs/inputs
+      - task: _docs/live
 
-  # Prepare both source repositories before handing completed archives to Sphinx.
-  _docs/prepare:
-    vars: *docs_vars
-    label: 'docs-{{.client_root}}-{{.modules_root}}-{{.CLIENT_TAG}}-{{.MODULES_REF}}'
+  _docs/inputs:
+    internal: true
+    preconditions:
+      - sh: test -z {{.CLIENT_ROOT | shellQuote}} || test -z {{.CLIENT_DOCS | shellQuote}}
+        msg: Set CLIENT_ROOT or CLIENT_DOCS, not both.
+      - sh: test -z {{.CLIENT_ROOT | shellQuote}} || test -d {{.CLIENT_ROOT | shellQuote}}
+        msg: CLIENT_ROOT must be an existing directory.
+      - sh: test -z {{.CLIENT_DOCS | shellQuote}} || test -e {{.client_docs | shellQuote}}
+        msg: CLIENT_DOCS must be an existing directory or archive.
+      - sh: test -z {{.MODULES_ROOT | shellQuote}} || test -z {{.MODULES_DOCS | shellQuote}}
+        msg: Set MODULES_ROOT or MODULES_DOCS, not both.
+      - sh: test -z {{.MODULES_ROOT | shellQuote}} || test -d {{.MODULES_ROOT | shellQuote}}
+        msg: MODULES_ROOT must be an existing directory.
+      - sh: test -z {{.MODULES_DOCS | shellQuote}} || test -e {{.modules_docs | shellQuote}}
+        msg: MODULES_DOCS must be an existing directory or archive.
+      - sh: test {{empty .client_docs}} = {{empty .modules_docs}}
+        msg: Pass CLIENT_ROOT or CLIENT_DOCS with MODULES_ROOT or MODULES_DOCS, or omit all four.
+    cmds:
+      - for: { var: archive_tasks }
+        task: '{{.ITEM}}'
+
+  _docs/archive/client:
+    cmds:
+      - task: _docs/archive
+        vars:
+          PRODUCT: client
+          ROOT: '{{.CLIENT_ROOT}}'
+          ARGS: '{{with .CLIENT_TAG}}{{printf "RELEASE_TAG=%s" . | shellQuote}}{{end}}'
+
+  _docs/archive/modules:
+    cmds:
+      - task: _docs/archive
+        vars:
+          PRODUCT: modules
+          ROOT: '{{.MODULES_ROOT}}'
+          ARGS: '{{with .MODULES_REF}}{{printf "MODULES_REF=%s" . | shellQuote}}{{end}}'
+
+  _docs/archive:
+    internal: true
+    label: 'docs archive: {{.PRODUCT}}'
+    requires:
+      vars: [PRODUCT, ROOT]
+    vars:
+      archive: build/{{.PRODUCT}}-docs/docs.tar.gz
     sources:
-      - '{{if .client_root}}{{.client_root}}/**/*{{end}}'
-      - exclude: '{{if .client_root}}{{.client_root}}/.git/**/*{{end}}'
-      - exclude: '{{if .client_root}}{{.client_root}}/.cache/**/*{{end}}'
-      - exclude: '{{if .client_root}}{{.client_root}}/.task/**/*{{end}}'
-      - exclude: '{{if .client_root}}{{.client_root}}/build/**/*{{end}}'
-      - exclude: '{{if .client_root}}{{.client_root}}/bin/**/*{{end}}'
-      - exclude: '{{if .client_root}}{{.client_root}}/**/__pycache__/**/*{{end}}'
-      - exclude: '{{if .client_root}}{{.client_root}}/internal/nixos/resources/modules.zip{{end}}'
-      - '{{if .modules_root}}{{.modules_root}}/**/*{{end}}'
-      - exclude: '{{if .modules_root}}{{.modules_root}}/.git/**/*{{end}}'
-      - exclude: '{{if .modules_root}}{{.modules_root}}/.cache/**/*{{end}}'
-      - exclude: '{{if .modules_root}}{{.modules_root}}/.task/**/*{{end}}'
-      - exclude: '{{if .modules_root}}{{.modules_root}}/build/**/*{{end}}'
-      - exclude: '{{if .modules_root}}{{.modules_root}}/**/__pycache__/**/*{{end}}'
+      - '{{.ROOT}}/**/*'
+      - exclude: '{{.ROOT}}/bin/**/*'
+      - exclude: '{{.ROOT}}/.git/**/*'
+      - exclude: '{{.ROOT}}/.idea/**/*'
+      - exclude: '{{.ROOT}}/.task/**/*'
+      - exclude: '{{.ROOT}}/build/**/*'
+      - exclude: '{{.ROOT}}/.cache/**/*'
+      - exclude: '{{.ROOT}}/**/.DS_Store'
+      - exclude: '{{.ROOT}}/**/__pycache__/**/*'
+      - exclude: '{{.ROOT}}/internal/nixos/resources/modules.zip'
     generates:
-      - '{{if .client_root}}build/client-docs/docs.tar.gz{{end}}'
-      - '{{if .modules_root}}build/modules-docs/docs.tar.gz{{end}}'
+      - '{{.archive}}'
+    status:
+      - '{{if .INCREMENTAL}}true{{else}}false{{end}}'
     cmds:
-      - |
-        {{if .client_root}}
-        task --yes --dir {{.client_root | shellQuote}} docs/prepare {{if .CLIENT_TAG}}{{printf "RELEASE_TAG=%s" .CLIENT_TAG | shellQuote}}{{end}}
-        mkdir -p build/client-docs
-        COPYFILE_DISABLE=1 tar -czf build/client-docs/docs.tar.gz.tmp -C {{printf "%s/build/docs" .client_root | shellQuote}} .
-        {{end}}
-        {{if .modules_root}}
-        task --yes --dir {{.modules_root | shellQuote}} docs/prepare {{if .MODULES_REF}}{{printf "MODULES_REF=%s" .MODULES_REF | shellQuote}}{{end}}
-        mkdir -p build/modules-docs
-        COPYFILE_DISABLE=1 tar -czf build/modules-docs/docs.tar.gz.tmp -C {{printf "%s/build/docs" .modules_root | shellQuote}} .
-        {{end}}
-        {{if .client_root}}mv build/client-docs/docs.tar.gz.tmp build/client-docs/docs.tar.gz{{end}}
-        {{if .modules_root}}mv build/modules-docs/docs.tar.gz.tmp build/modules-docs/docs.tar.gz{{end}}
+      - task --yes --dir {{.ROOT | shellQuote}} docs/prepare {{.ARGS}}
+      - mkdir -p {{dir .archive}}
+      - COPYFILE_DISABLE=1 tar -czf {{.archive}}.tmp -C {{printf "%s/build/docs" .ROOT | shellQuote}} .
+      - mv {{.archive}}.tmp {{.archive}}
 
-  _docs/serve:
-    vars: *docs_vars
+  _docs/live:
+    internal: true
+    failfast: true
+    deps: [_docs/watch, _docs/autobuild]
+
+  _docs/watch:
+    internal: true
+    cmds:
+      - cmd: >-
+          task --watch --interval 1s {{.archive_tasks}} INCREMENTAL=true
+          {{printf "CLIENT_ROOT=%s" .CLIENT_ROOT | shellQuote}} {{printf "CLIENT_TAG=%s" .CLIENT_TAG | shellQuote}}
+          {{printf "MODULES_ROOT=%s" .MODULES_ROOT | shellQuote}} {{printf "MODULES_REF=%s" .MODULES_REF | shellQuote}}
+        if: test -n {{.archive_tasks | shellQuote}}
+
+  _docs/autobuild:
+    internal: true
+    vars:
+      port: '{{.DOCS_PORT | default "8040"}}'
+      watch_inputs: >-
+        {{with .client_docs}}--watch {{if hasSuffix ".tar.gz" .}}/inputs/client{{else}}{{printf "/inputs/client/%s" (base .) | shellQuote}}{{end}}{{end}}
+        {{with .modules_docs}}--watch {{if hasSuffix ".tar.gz" .}}/inputs/modules{{else}}{{printf "/inputs/modules/%s" (base .) | shellQuote}}{{end}}{{end}}
     cmds:
       - mkdir -p build/docs-pages
       - task: python:_uv/tool
         vars:
-          CONTAINER_PORTS: '127.0.0.1:{{.docs_port}}:{{.docs_port}}'
-          CONTAINER_ENVS: CLIENT_TAG MODULES_TAG PYTHONUNBUFFERED=1 TINI_KILL_PROCESS_GROUP=1
-          CONTAINER_VOLUMES: *docs_volumes
           CMD: >-
             uv run --locked --group docs sphinx-autobuild
-            --host 0.0.0.0 --port {{.docs_port | shellQuote}}
-            --pre-build {{.prepare | shellQuote}}
-            --watch docs --ignore build/docs-pages --re-ignore '\.tmp$'
-            {{if .client_docs}}--watch {{.client_watch | shellQuote}}{{end}}
-            {{if .modules_docs}}--watch {{.modules_watch | shellQuote}}{{end}}
+            --host 0.0.0.0 --port {{.port | shellQuote}}
+            --pre-build {{.docs_prepare | shellQuote}}
+            --watch docs {{.watch_inputs}}
+            --ignore build/docs-pages --re-ignore '\.tmp$'
             -E -a -W --keep-going -c docs build/docs-pages build/docs-preview
+          CONTAINER_PORTS: '127.0.0.1:{{.port}}:{{.port}}'
+          CONTAINER_ENVS: CLIENT_TAG MODULES_TAG PYTHONUNBUFFERED=1 TINI_KILL_PROCESS_GROUP=1
+          CONTAINER_VOLUMES: '{{.docs_volumes}}'

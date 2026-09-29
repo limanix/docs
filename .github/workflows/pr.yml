@@ -13,29 +13,36 @@ permissions:
   contents: read
 
 jobs:
-  python:
-    name: Python ${{ matrix.check }}
-    runs-on: ubuntu-24.04
+  terraform-ci:
+    name: terraform ci
+    uses: mr-chelyshkin/actions/.github/workflows/pr-terraform.yml@v1
     permissions:
       contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        check: [fmt, lint, test]
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
-        with:
-          command: ci/${{ matrix.check }}
+      id-token: write
+    with:
+      terraform-role-arn: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
+      aws-region: ${{ vars.AWS_REGION }}
+      environment: |
+        {
+          "TF_STATE_KEY": ${{ toJSON(vars.TF_STATE_KEY) }},
+          "TF_VAR_aws_region": ${{ toJSON(vars.AWS_REGION) }},
+          "TF_STATE_REGION": ${{ toJSON(vars.TF_STATE_REGION) }},
+          "TF_STATE_BUCKET": ${{ toJSON(vars.TF_STATE_BUCKET) }},
+          "TF_VAR_domain_name": ${{ toJSON(vars.SITE_DOMAIN_NAME) }},
+          "TF_VAR_site_bucket_name": ${{ toJSON(vars.SITE_BUCKET_NAME) }},
+          "TF_VAR_acm_certificate_arn": ${{ toJSON(vars.SITE_ACM_CERTIFICATE_ARN) }}
+        }
+
+  static-ci:
+    name: static ci
+    uses: mr-chelyshkin/actions/.github/workflows/pr-static-site.yml@v1
 
   docs:
     uses: ./.github/workflows/_build.yml
 
   gate:
     if: always()
-    needs: [python, docs]
+    needs: [terraform-ci, static-ci, docs]
     runs-on: ubuntu-24.04
     permissions:
       contents: read

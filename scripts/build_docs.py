@@ -1,8 +1,4 @@
-"""Prepare the source tree consumed by Sphinx.
-
-The docs repository owns the site. Prepared client and module documentation
-are read-only inputs; only the generated tree under build/ is changed.
-"""
+"""Prepare the source tree consumed by Sphinx."""
 
 from __future__ import annotations
 
@@ -16,9 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PAGES = ROOT / "build" / "docs-pages"
-SITE_GUIDE_LINK = re.compile(
-    r"\]\(https://limanix\.dev/categories/(client|nixos)/([\w/-]+)\.html(#[^\s)]*)?\)"
-)
+SITE_GUIDE_LINK = re.compile(r"\]\(https://limanix\.dev/categories/(client|nixos)/([\w/-]+)\.html(#[^\s)]*)?\)")
 
 
 def copy_prepared(source: Path, destination: Path, name: str) -> None:

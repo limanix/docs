@@ -143,14 +143,14 @@ Existing client archives stay unchanged.
 ## What happens after the client builds?
 
 Each client GitHub Release records its source commit and a **Module catalog** link identifying the bundled catalog.
-After a successful single release or complete rebuild matrix, `_notify.yml` sends the published pairs to `docs` in one `limanix-client-release` event.
+After a successful single release or complete rebuild matrix, `_notify.yml` sends the published pairs to `docs` in one `client-release` event.
 
 <details>
 <summary>See an event for two client releases</summary>
 
 ```json
 {
-  "event_type": "limanix-client-release",
+  "event_type": "client-release",
   "client_payload": {
     "releases": [
       {"client_tag": "v1.3.0+1", "modules_tag": "v7"},

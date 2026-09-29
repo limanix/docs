@@ -1,14 +1,14 @@
-name: Build documentation
+name: Build docs
 
 on:
   workflow_call:
     inputs:
       docs-ref:
-        description: Docs source commit. Empty uses this workflow's commit.
+        description: Docs source commit.
         type: string
         default: ''
       client-tag:
-        description: Client release to include. Empty builds shared pages only.
+        description: Client release to include.
         type: string
         default: ''
       modules-tag:
@@ -16,7 +16,7 @@ on:
         type: string
         default: ''
       artifact-name:
-        description: Artifact to upload. Empty skips the upload.
+        description: Artifact to upload.
         type: string
         default: ''
 
@@ -34,42 +34,42 @@ jobs:
         with:
           ref: ${{ inputs.docs-ref || github.sha }}
           persist-credentials: false
-      - name: Download documentation sources
+      - name: Download client docs
         if: inputs.client-tag != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p build/inputs/client build/inputs/modules
-          gh release download "$CLIENT_TAG" --repo limanix/client \
-            --pattern docs.tar.gz --dir build/inputs/client
-          gh release download "$MODULES_TAG" --repo limanix/modules \
-            --pattern docs.tar.gz --dir build/inputs/modules
-      - name: Build shared pages
-        if: inputs.client-tag == ''
-        uses: mr-chelyshkin/actions/invoke-taskfile@v1
-        with:
-          command: ci/docs
-      - name: Build client documentation
+          mkdir -p build/inputs/client
+          gh release download "$CLIENT_TAG" --repo limanix/client --pattern docs.tar.gz --dir build/inputs/client
+      - name: Download modules docs
         if: inputs.client-tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p build/inputs/modules
+          gh release download "$MODULES_TAG" --repo limanix/modules --pattern docs.tar.gz --dir build/inputs/modules
+      - name: Build docs
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
-          command: ci/docs CLIENT_DOCS=build/inputs/client/docs.tar.gz MODULES_DOCS=build/inputs/modules/docs.tar.gz
-      - name: Check generated client version
+          command: >-
+            ci/docs
+            ${{ inputs.client-tag != '' && 'CLIENT_DOCS=build/inputs/client/docs.tar.gz MODULES_DOCS=build/inputs/modules/docs.tar.gz' || '' }}
+      - name: Check version
         if: inputs.client-tag != ''
         run: |
           jq -e --arg tag "$CLIENT_TAG" '.version == $tag' \
             build/docs-pages/categories/client/generated/metadata.json > /dev/null
-      - name: Record source versions
+      - name: Record versions
         if: inputs.artifact-name != ''
         run: |
           jq -n --arg client_tag "$CLIENT_TAG" --arg modules_tag "$MODULES_TAG" \
             --arg docs_sha "$(git rev-parse HEAD)" \
             '{client_tag: $client_tag, modules_tag: $modules_tag, docs_sha: $docs_sha}' > build/docs/release.json
-      - name: Upload documentation
+      - name: Upload docs
         if: inputs.artifact-name != ''
         uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.artifact-name }}
-          path: build/docs
           if-no-files-found: error
+          path: build/docs
           overwrite: true
