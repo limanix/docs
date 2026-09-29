@@ -65,11 +65,18 @@ jobs:
           jq -n --arg client_tag "$CLIENT_TAG" --arg modules_tag "$MODULES_TAG" \
             --arg docs_sha "$(git rev-parse HEAD)" \
             '{client_tag: $client_tag, modules_tag: $modules_tag, docs_sha: $docs_sha}' > build/docs/release.json
+      - name: Prepare docs artifact
+        if: inputs.artifact-name != ''
+        env:
+          ARTIFACT_NAME: ${{ inputs.artifact-name }}
+        run: |
+          mkdir -p build/artifacts
+          mv build/docs "build/artifacts/$ARTIFACT_NAME"
       - name: Upload docs
         if: inputs.artifact-name != ''
         uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.artifact-name }}
           if-no-files-found: error
-          path: build/docs
+          path: build/artifacts
           overwrite: true
