@@ -12,6 +12,12 @@ the guest system.
 2. Create a Linux VM with the tools and services your project needs.
 3. Edit files on macOS and build, test, and run your project inside the VM.
 
+## How it compares
+
+LimaNix combines VM settings and NixOS module selection in a project's TOML file.
+The selected tools run as Linux builds inside the VM, without requiring Nix on the Mac.
+Read [How LimaNix compares](comparison.md) for details and trade-offs.
+
 ## Project repositories
 
 - [Client](https://github.com/limanix/client) - the Limanix command-line application.
@@ -29,5 +35,6 @@ supported clients and how their documentation is published.
 :caption: Project
 :glob:
 
+comparison
 **/index
 ```
