@@ -1,5 +1,13 @@
 # LimaNix documentation
 
+[![License: Apache-2.0](https://img.shields.io/github/license/mr-chelyshkin/images?label=license)](LICENSE)
+
+<p align="center">
+  <img src=".github/assets/readme-header.png"
+       alt="github.com/mr-chelyshkin/images"
+       width="800">
+</p>
+
 This repository builds and publishes the combined Sphinx site.
 It owns the shared pages, theme, navigation, and S3 publication.
 The client and modules repositories prepare their own documentation and publish it as `docs.tar.gz` release assets.
