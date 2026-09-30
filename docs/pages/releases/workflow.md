@@ -21,16 +21,16 @@ The modules workflow also reports available Nixpkgs updates; that report is outs
 From `client`, with Task and Docker available:
 
 ```bash
-task --yes ci/fmt ci/lint ci/test ci/vuln modules_version=v4
+task --yes ci/golang-fmt ci/golang-lint ci/golang-test ci/golang-vuln modules_version=v2
 ```
 
-Replace `v4` with the published module catalog tag you want to test.
+Replace `v2` with the published module catalog tag you want to test.
 Tests and native builds require an explicit `modules_version`.
 
 The native build also needs macOS, Go, and the Xcode command-line tools:
 
 ```bash
-task --yes ci/build modules_version=v4
+task --yes ci/build modules_version=v2
 ```
 
 It builds and ad hoc signs both macOS binaries.
@@ -43,7 +43,7 @@ It builds and ad hoc signs both macOS binaries.
 From `modules`, with Task and Docker available:
 
 ```bash
-task --yes ci/fmt ci/lint ci/test
+task --yes ci/nixos-fmt ci/nixos-lint ci/test
 ```
 
 The checks validate catalog metadata and evaluate NixOS configurations.
@@ -58,7 +58,7 @@ Evaluation does not build packages or boot a VM.
 From `docs`, with Task and Docker available:
 
 ```bash
-task --yes ci/fmt ci/lint ci/test
+task --yes ci/terraform-fmt ci/terraform-validate ci/static-test ci/static-audit
 task --yes ci/static-build
 ```
 

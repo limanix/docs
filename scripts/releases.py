@@ -38,7 +38,7 @@ class Release:
 
     @property
     def version(self) -> tuple[int, ...]:
-        """Numeric parts of the client tag, so v1.10.0 follows v1.9.0."""
+        """Numeric parts of the client tag; v1.10.0 follows v1.9.0."""
         return tuple(int(part) for part in re.findall(r"[0-9]+", self.client_tag))
 
 
