@@ -5,7 +5,7 @@
 <p align="center">
   <img src=".github/assets/readme-header.png"
        alt="LimaNix documentation"
-       width="800">
+       width="100%">
 </p>
 
 This repository builds and publishes [limanix.dev](https://limanix.dev).
