@@ -99,6 +99,9 @@ tasks:
       - task: python:lint
         vars:
           LINT_ARGS: scripts docs/conf.py
+      - task: python:_uv/tool
+        vars:
+          CMD: uv run --locked python -B -m unittest discover -s scripts/tests
 
   docs/serve:
     desc: Serve docs with live rebuilds

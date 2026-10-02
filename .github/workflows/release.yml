@@ -14,6 +14,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
         with:
@@ -28,9 +29,37 @@ jobs:
         with:
           branch: main
 
-  infrastructure:
+  quality:
     needs: verify
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        task: [ci/static-test, ci/static-audit, ci/static-build, ci/terraform-fmt, ci/terraform-validate]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ${{ matrix.task }}
+
+  gate:
+    if: always()
+    needs: [verify, quality]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: mr-chelyshkin/actions/check-job-results@v1
+        with:
+          results: ${{ toJSON(needs) }}
+
+  infrastructure:
+    needs: [verify, gate]
+    runs-on: ubuntu-24.04
+    # AWS provider 6.57.1 allows 90 minutes for CloudFront deployment.
+    timeout-minutes: 100
     permissions:
       contents: read
       id-token: write

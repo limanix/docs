@@ -13,37 +13,117 @@ permissions:
   contents: read
 
 jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      infrastructure: ${{ steps.paths.outputs.infrastructure }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select infrastructure plan
+        id: paths
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          status=0
+          git --no-optional-locks diff --quiet "$BASE_SHA" "$HEAD_SHA" -- tf/ Taskfile.yml .github/workflows/ || status=$?
+          case "$status" in
+            0) printf 'infrastructure=false\n' >> "$GITHUB_OUTPUT" ;;
+            1) printf 'infrastructure=true\n' >> "$GITHUB_OUTPUT" ;;
+            *) exit "$status" ;;
+          esac
+
   terraform-ci:
-    name: terraform ci
-    uses: mr-chelyshkin/actions/.github/workflows/pr-terraform.yml@v1
+    name: ${{ matrix.task }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        task: [ci/terraform-fmt, ci/terraform-validate]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Restore provider cache
+        uses: actions/cache@v5
+        with:
+          path: .cache/terraform
+          key: terraform-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tf/.terraform.lock.hcl') }}
+      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ${{ matrix.task }}
+
+  terraform-plan:
+    needs: plan
+    if: ${{ needs.plan.outputs.infrastructure == 'true' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: read
       id-token: write
-    with:
-      terraform-role-arn: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
-      aws-region: ${{ vars.AWS_REGION }}
-      environment: |
-        {
-          "TF_STATE_KEY": ${{ toJSON(vars.TF_STATE_KEY) }},
-          "TF_VAR_aws_region": ${{ toJSON(vars.AWS_REGION) }},
-          "TF_STATE_REGION": ${{ toJSON(vars.TF_STATE_REGION) }},
-          "TF_STATE_BUCKET": ${{ toJSON(vars.TF_STATE_BUCKET) }},
-          "TF_VAR_domain_name": ${{ toJSON(vars.SITE_DOMAIN_NAME) }},
-          "TF_VAR_site_bucket_name": ${{ toJSON(vars.SITE_BUCKET_NAME) }},
-          "TF_VAR_acm_certificate_arn": ${{ toJSON(vars.SITE_ACM_CERTIFICATE_ARN) }}
-        }
+    env:
+      TF_STATE_KEY: ${{ vars.TF_STATE_KEY }}
+      TF_STATE_REGION: ${{ vars.TF_STATE_REGION }}
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+      TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+      TF_VAR_domain_name: ${{ vars.SITE_DOMAIN_NAME }}
+      TF_VAR_site_bucket_name: ${{ vars.SITE_BUCKET_NAME }}
+      TF_VAR_acm_certificate_arn: ${{ vars.SITE_ACM_CERTIFICATE_ARN }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Restore provider cache
+        uses: actions/cache@v5
+        with:
+          path: .cache/terraform
+          key: terraform-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tf/.terraform.lock.hcl') }}
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Plan infrastructure
+        timeout-minutes: 15
+        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ci/terraform-plan
 
   static-ci:
-    name: static ci
-    uses: mr-chelyshkin/actions/.github/workflows/pr-static-site.yml@v1
+    name: ${{ matrix.task }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        task: [ci/static-test, ci/static-audit, ci/static-build]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Restore documentation dependency cache
+        uses: actions/cache@v5
+        with:
+          path: .cache/python
+          key: docs-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.task }}-${{ hashFiles('uv.lock') }}-${{ github.sha }}
+          restore-keys: |
+            docs-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.task }}-${{ hashFiles('uv.lock') }}-
+            docs-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.task }}-
+      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ${{ matrix.task }}
 
   gate:
     if: always()
-    needs: [terraform-ci, static-ci]
+    needs: [plan, terraform-ci, terraform-plan, static-ci]
     runs-on: ubuntu-24.04
-    permissions:
-      contents: read
+    timeout-minutes: 5
     steps:
       - uses: mr-chelyshkin/actions/check-job-results@v1
         with:
           results: ${{ toJSON(needs) }}
+          skipped: ${{ needs.plan.result == 'success' && (needs.plan.outputs.infrastructure == 'false' || github.event.pull_request.head.repo.full_name != github.repository) && 'terraform-plan' || '' }}
