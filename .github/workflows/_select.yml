@@ -30,6 +30,7 @@ permissions:
 jobs:
   select:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       docs-ref: ${{ steps.select.outputs.docs-ref }}
       client-tag: ${{ steps.select.outputs.client-tag }}

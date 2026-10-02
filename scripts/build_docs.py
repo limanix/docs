@@ -56,7 +56,7 @@ def prepare(client: Path | None, modules: Path | None) -> None:
     copy_prepared(client, categories / "client", "client")
     copy_prepared(modules, categories / "nixos", "module")
 
-    for page in categories.rglob("*.md"):
+    for page in PAGES.rglob("*.md"):
         original = page.read_text(encoding="utf-8")
         updated = rewrite_site_guide_links(original, page)
         if updated != original:

@@ -34,8 +34,18 @@ jobs:
       modules-tag: ${{ matrix.modules_tag }}
       artifact-name: docs-${{ matrix.client_tag }}
 
-  publish:
+  gate:
+    if: always()
     needs: [sources, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: mr-chelyshkin/actions/check-job-results@v1
+        with:
+          results: ${{ toJSON(needs) }}
+
+  publish:
+    needs: [sources, build, gate]
     uses: ./.github/workflows/_publish.yml
     permissions:
       contents: read

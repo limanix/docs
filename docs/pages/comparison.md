@@ -59,7 +59,8 @@ Choose LimaNix when you want tools and system services configured together insid
 
 ## Lima
 
-LimaNix embeds Lima, so you do not install Lima separately.
+LimaNix embeds Lima.
+You do not install Lima separately.
 Lima runs many distributions from [YAML templates](https://lima-vm.io/docs/config/) and provisions them with shell scripts.
 LimaNix fixes the guest to NixOS and replaces those scripts with modules.
 `limanix update` rebuilds the guest from the configuration instead of running setup commands again.

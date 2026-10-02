@@ -13,10 +13,7 @@ It owns the shared pages, theme, navigation, and publication infrastructure.
 Client and module guides live in their own repositories.
 This repository assembles them with the shared pages.
 
-[Site](https://limanix.dev) ·
-[Release process](https://limanix.dev/releases/index.html) ·
-[Client](https://github.com/limanix/client) ·
-[Modules](https://github.com/limanix/modules)
+[Site](https://limanix.dev) · [Release process](https://limanix.dev/releases/index.html) · [Client](https://github.com/limanix/client) · [Modules](https://github.com/limanix/modules)
 
 ## Where to edit
 
@@ -51,7 +48,8 @@ task --yes docs/serve CLIENT_ROOT=../client MODULES_ROOT=../modules
 ```
 
 `ci/static-build` without product inputs builds the shared pages, as in the docs PR workflow.
-With both products, it includes client guides, generated CLI and configuration references, module guides, and module READMEs.
+With both products, it includes client guides, generated CLI and configuration references, module guides, module READMEs, and any nested module guides.
+Links from shared pages to the product guides resolve within the assembled site.
 `docs/serve` rebuilds when the shared pages or product sources change.
 Open <http://127.0.0.1:8040>, or set `DOCS_PORT` to use another port.
 
@@ -90,9 +88,15 @@ task --yes ci/terraform-fmt ci/terraform-validate ci/static-test ci/static-audit
 ```
 
 See [Taskfile.yml](Taskfile.yml) for the complete task list.
-The PR workflow runs the Terraform and static checks through reusable workflows.
-It also builds the site and combines the results in `gate`.
-The Terraform plan uses the repository's AWS role and configured state variables.
+The PR workflow runs Python formatting, lint and unit tests, dependency audit, Sphinx build, Terraform formatting and Terraform validation as parallel required checks.
+`gate` combines their results with the change plan.
+Terraform planning runs only for infrastructure, Taskfile or workflow changes from the same repository, using its AWS role and configured state variables.
+Ten minutes is a performance target; exceeding it does not fail valid checks.
+Check jobs have 15-minute hang guards; planning and the result gate allow five minutes each.
+Terraform planning depends only on the path plan and validates configuration during its own preparation.
+Runner queues, cold downloads and provider startup can add time.
+These guards stop unfinished work; they do not prove successful cold-cache hosted runtime.
+These checks do not publish the site.
 
 ## Publication
 
@@ -104,6 +108,11 @@ The Terraform plan uses the repository's AWS role and configured state variables
 
 `release.yml` and `events.yml` use `_select.yml`, `_build.yml`, and `_publish.yml`.
 These workflows select sources, build the site, and publish it.
+Docs validation and site builds have 15-minute job guards; source selection and result gates allow five minutes each.
+Infrastructure deployment retains its 100-minute guard for provider readiness waits.
+Site upload and CloudFront invalidation allow 15 minutes, including an invalidation wait of up to ten minutes.
+Cloud readiness waits can extend deployment past the performance target; readiness and receipt checks remain required.
+Queue waits and successful cold-cache runtimes remain dependent on the hosted environment.
 `scripts/releases.py` decides which versions to build and which archives and catalog to upload.
 The workflows transfer the selected files.
 Release builds download the products' prepared documentation from GitHub Releases.
