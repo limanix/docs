@@ -13,6 +13,18 @@ permissions:
   contents: read
 
 jobs:
+  markdown:
+    name: Markdown formatting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        with:
+          command: ci/markdown-fmt
+
   plan:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -119,7 +131,7 @@ jobs:
 
   gate:
     if: always()
-    needs: [plan, terraform-ci, terraform-plan, static-ci]
+    needs: [markdown, plan, terraform-ci, terraform-plan, static-ci]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
