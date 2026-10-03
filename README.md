@@ -8,131 +8,74 @@
        width="100%">
 </p>
 
-This repository builds and publishes [limanix.dev](https://limanix.dev).
-It owns the shared pages, theme, navigation, and publication infrastructure.
-Client and module guides live in their own repositories.
-This repository assembles them with the shared pages.
+The documentation site for [LimaNix](https://github.com/limanix/client), which
+runs Linux development environments on macOS. This repository builds and
+publishes [limanix.dev](https://limanix.dev) using Sphinx.
 
-[Site](https://limanix.dev) · [Release process](https://limanix.dev/releases/index.html) · [Client](https://github.com/limanix/client) · [Modules](https://github.com/limanix/modules)
+It owns the shared pages, theme, navigation and publication infrastructure.
+Client and module guides live in their own repositories; this repository
+assembles them with the shared pages into one site.
 
-## Where to edit
+[Documentation](https://limanix.dev) |
+[Release process](docs/pages/releases/index.md) |
+[Releases](https://github.com/limanix/docs/releases)
 
-| Content                                         | Edit in                                                                              |
-|-------------------------------------------------|--------------------------------------------------------------------------------------|
-| Client guides, CLI and configuration references | [`client`](https://github.com/limanix/client): `guides/` and the source definitions  |
-| Module guides and module pages                  | [`modules`](https://github.com/limanix/modules): `guides/` and `catalog/*/README.md` |
-| Home page, release process, theme, navigation   | This repository: `docs/pages/`, `docs/conf.py`, and `docs/_static/`                  |
+## Get started
 
-Client and module pages reach the site with the next release of their repository.
-Changes in this repository reach the site with the next docs tag.
+Local builds require [Task](https://taskfile.dev) 3.53.1 or newer and Docker
+with a running engine. Keep the `client`, `modules` and `docs` checkouts side by
+side. From the `docs` checkout, build and preview the complete site:
 
-## Repository layout
-
-| Path                            | Contents                                                       |
-|---------------------------------|----------------------------------------------------------------|
-| `docs/pages/`                   | Shared pages: the home page and the release process            |
-| `docs/conf.py`, `docs/_static/` | Sphinx configuration, styles, and page scripts                 |
-| `scripts/build_docs.py`         | Combines the shared pages with prepared client and module docs |
-| `scripts/releases.py`           | Selects the versions to build and the files to upload          |
-| `tf/`                           | The S3 bucket and CloudFront distribution that serve the site  |
-| `.github/workflows/`            | PR checks, docs releases, and client release events            |
-
-## Build and preview
-
-Run from this repository with [Task](https://taskfile.dev) and Docker available:
-
-```bash
-task --yes ci/static-build
+```console
 task --yes ci/static-build CLIENT_ROOT=../client MODULES_ROOT=../modules
 task --yes docs/serve CLIENT_ROOT=../client MODULES_ROOT=../modules
 ```
 
-`ci/static-build` without product inputs builds the shared pages, as in the docs PR workflow.
-With both products, it includes client guides, generated CLI and configuration references, module guides, module READMEs, and any nested module guides.
-Links from shared pages to the product guides resolve within the assembled site.
-`docs/serve` rebuilds when the shared pages or product sources change.
-Open <http://127.0.0.1:8040>, or set `DOCS_PORT` to use another port.
+The build writes HTML to `build/docs`. Open <http://127.0.0.1:8040> for the
+preview, which rebuilds when shared pages or product sources change. Omit both
+product inputs to build or preview only the shared pages. See
+[Build and preview documentation locally](docs/pages/releases/workflow.md) for
+prepared documentation inputs and local checks.
 
-Choose one input for each product:
+## Documentation
 
-| Input          | Accepted value                                 |
-|----------------|------------------------------------------------|
-| `CLIENT_ROOT`  | Client checkout; runs its `docs/prepare` task  |
-| `CLIENT_DOCS`  | Prepared client directory or `docs.tar.gz`     |
-| `MODULES_ROOT` | Modules checkout; runs its `docs/prepare` task |
-| `MODULES_DOCS` | Prepared modules directory or `docs.tar.gz`    |
+| Guide | Contents |
+| -- | -- |
+| [Overview](docs/pages/index.md) | Product introduction and routes into the client and module guides. |
+| [Comparison](docs/pages/comparison.md) | Development workflows and trade-offs compared with other tools. |
+| [Release process](docs/pages/releases/index.md) | Repository responsibilities and the path from a contribution to publication. |
+| [Release workflow](docs/pages/releases/workflow.md) | Local checks, release paths and documentation publication. |
+| [Versioning](docs/pages/releases/versioning.md) | Client versions, catalog rebuilds and docs tags. |
 
-Prepared inputs must contain `index.md` at their root.
-For example:
+The assembled site includes the
+[client guides](https://limanix.dev/categories/client/index.html) and
+[module documentation](https://limanix.dev/categories/nixos/index.html).
 
-```bash
-task --yes ci/static-build CLIENT_ROOT=../client MODULES_DOCS=../modules/build/docs
-task --yes ci/static-build CLIENT_DOCS=build/inputs/client/docs.tar.gz MODULES_DOCS=build/inputs/modules/docs.tar.gz
-```
+## Contributing
 
-`DOCS_OUTPUT` defaults to `build/docs`.
-Other output directories must also be under `build/`.
-With `MODULES_ROOT`, source links use the modules checkout's commit SHA.
-Set `MODULES_REF=v2` to point them at a published tag instead.
-Uncommitted documentation edits still appear in the local build.
+Follow the
+[contribution guide](https://github.com/limanix/.github/blob/main/CONTRIBUTING.md)
+when changing the documentation. Edit client guides and reference definitions in
+[client](https://github.com/limanix/client), and module guides and references in
+[modules](https://github.com/limanix/modules).
 
-Client pages appear under `/categories/client/`.
-NixOS guides appear under `/categories/nixos/`.
-Module READMEs appear under `/categories/nixos/modules/`.
-Links between those guides stay within the selected site version.
+Shared pages live in [docs/pages/](docs/pages/), Sphinx configuration in
+[docs/conf.py](docs/conf.py), and styles and page scripts in
+[docs/\_static/](docs/_static/). See [Taskfile.yml](Taskfile.yml) for local
+checks, build inputs and preview settings. Use
+[Issues](https://github.com/limanix/docs/issues) for questions, bug reports and
+feature requests.
 
-## Checks
+<details>
+<summary>Code walkthroughs</summary>
 
-```bash
-task --yes ci/terraform-fmt ci/terraform-validate ci/static-test ci/static-audit
-```
+For Nix and TOML line-by-line examples, use a MyST `code-block` or
+`literalinclude` with `:linenos:`, a unique `:name:`, and
+`:class: code-example`. Link table cells to line ranges with
+`[2–5](#example-name.2-5){.external .code-lines}` and use `Code` as the column
+heading. The bundled Prism plugins highlight the linked range; the `external`
+class preserves the fragment for the browser.
 
-See [Taskfile.yml](Taskfile.yml) for the complete task list.
-The PR workflow runs Python formatting, lint and unit tests, dependency audit, Sphinx build, Terraform formatting and Terraform validation as parallel required checks.
-`gate` combines their results with the change plan.
-Terraform planning runs only for infrastructure, Taskfile or workflow changes from the same repository, using its AWS role and configured state variables.
-Ten minutes is a performance target; exceeding it does not fail valid checks.
-Check jobs have 15-minute hang guards; planning and the result gate allow five minutes each.
-Terraform planning depends only on the path plan and validates configuration during its own preparation.
-Runner queues, cold downloads and provider startup can add time.
-These guards stop unfinished work; they do not prove successful cold-cache hosted runtime.
-These checks do not publish the site.
-
-## Publication
-
-| Trigger              | Sources                                                              | Published result                            |
-|----------------------|----------------------------------------------------------------------|---------------------------------------------|
-| Docs PR              | Current shared pages                                                 | Build check only                            |
-| Docs tag             | Tagged docs commit and highest completed client/modules pair, if any | Site infrastructure and current site at `/` |
-| Client release event | Deployed docs commit and the published client/modules pairs          | Client archives and updated current site    |
-
-`release.yml` and `events.yml` use `_select.yml`, `_build.yml`, and `_publish.yml`.
-These workflows select sources, build the site, and publish it.
-Docs validation and site builds have 15-minute job guards; source selection and result gates allow five minutes each.
-Infrastructure deployment retains its 100-minute guard for provider readiness waits.
-Site upload and CloudFront invalidation allow 15 minutes, including an invalidation wait of up to ten minutes.
-Cloud readiness waits can extend deployment past the performance target; readiness and receipt checks remain required.
-Queue waits and successful cold-cache runtimes remain dependent on the hosted environment.
-`scripts/releases.py` decides which versions to build and which archives and catalog to upload.
-The workflows transfer the selected files.
-Release builds download the products' prepared documentation from GitHub Releases.
-The version switcher links the current site and saved client versions under `/client/<tag>/`.
-Existing archives stay unchanged.
-
-See the [release guide](docs/pages/releases/index.md) for the path from product changes to published documentation.
-
-## Code walkthroughs
-
-For line-by-line examples, use a standard MyST `code-block` or `literalinclude` with `:linenos:`, a unique `:name:`, and `:class: code-example`.
-Nix and TOML walkthroughs use the bundled Prism 1.30.0 Line Numbers and Line Highlight plugins.
-Link a table cell to a range with `[2–5](#example-name.2-5){.external .code-lines}`.
-Use `Code` as the column heading.
-The site displays each link as a code icon with its line range in a tooltip and an accessible label.
-The Markdown source keeps the line numbers.
-The `external` class tells MyST to leave the fragment for Prism to resolve in the browser.
-The fragment still links within the current page.
-Clicking the link highlights the entire range.
-The fragment preserves the highlight when the URL is reopened.
-Ordinary code blocks retain the site's standard rendering.
+</details>
 
 Licensed under [Apache 2.0](LICENSE).

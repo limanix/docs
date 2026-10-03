@@ -1,7 +1,8 @@
 # Release process
 
-A merged pull request changes the source; a release makes that change available to users.
-This guide follows your contribution from PR checks to binaries and published documentation.
+A merged pull request changes the source; a release makes that change available
+to users. This guide follows your contribution from PR checks to binaries and
+published documentation.
 
 ```mermaid
 flowchart TD
@@ -15,19 +16,20 @@ flowchart TD
     docs["Docs tag"] --> site
 ```
 
-The current site combines shared pages, client guides, module guides, and generated references in one navigation and search.
-The version switcher opens earlier client and module snapshots.
+The current site combines shared pages, client guides, module guides, and
+generated references in one navigation and search. The version switcher opens
+earlier client and module snapshots.
 
 ## Where does your change belong?
 
 | Your change | Repository | Documentation beside it |
-|-------------|------------|--------------------------|
+| -- | -- | -- |
 | CLI, configuration, or VM behavior | `client` | `guides/` |
 | Module code, defaults, or metadata | `modules` | `guides/` and `catalog/*/README.md` |
 | Shared pages, theme, or navigation | `docs` | `docs/pages/` and `docs/conf.py` |
 
-Update product guides in the repository that owns the behavior.
-The site builds them from those sources.
+Update product guides in the repository that owns the behavior. The site builds
+them from those sources.
 
 ```{important}
 Passing checks or merging a PR does not publish a release.
