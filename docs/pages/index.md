@@ -49,6 +49,7 @@ before deleting a VM.
 | -- | -- |
 | VM resources, mounts and environment | [Configuration](https://limanix.dev/categories/client/configuration.html) |
 | Guest service access from the Mac | [Networking](https://limanix.dev/categories/client/networking.html) |
+| Copy and paste between the Mac and the VM | [Terminal and clipboard](terminal.md) |
 | Component responsibilities and public contracts | [Architecture](https://limanix.dev/categories/client/architecture.html) |
 | A tool the catalog does not cover | [Write a module](https://limanix.dev/categories/nixos/writing-modules.html) |
 | Exact flags and configuration fields | [Reference](https://limanix.dev/categories/client/reference.html) |
@@ -72,5 +73,6 @@ published and how their documentation reaches this site.
 :glob:
 
 comparison
+terminal
 **/index
 ```
