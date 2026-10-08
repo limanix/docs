@@ -63,25 +63,25 @@ a VM.
 From `docs`, with Task and Docker available:
 
 ```bash
-task --yes ci/terraform-fmt ci/terraform-validate ci/static-test ci/static-audit
-task --yes ci/static-build
+task --yes ci/terraform/fmt ci/terraform/validate ci/static/test ci/static/audit
+task --yes ci/static/build
 ```
 
-`ci/static-build` builds the shared pages, matching the docs PR check. To
+`ci/static/build` builds the shared pages, matching the docs PR check. To
 include the product guides, point to the sibling repositories:
 
 ```bash
-task --yes ci/static-build CLIENT_ROOT=../client MODULES_ROOT=../modules
-task --yes docs/serve CLIENT_ROOT=../client MODULES_ROOT=../modules
+task --yes ci/static/build CLIENT_ROOT=../client MODULES_ROOT=../modules LMX_ROOT=../lmx
+task --yes docs/serve CLIENT_ROOT=../client MODULES_ROOT=../modules LMX_ROOT=../lmx
 ```
 
 Open <http://127.0.0.1:8040> for the preview. The preview rebuilds when shared
 pages or product sources change. Client preparation includes the generated CLI
 and configuration references.
 
-To use prepared pages, replace either root input with `CLIENT_DOCS` or
-`MODULES_DOCS`, pointing to a directory or `docs.tar.gz`. Pass one client input
-together with one module input. Release builds use the documentation archives
+To use prepared pages, replace any root input with `CLIENT_DOCS`, `MODULES_DOCS`
+or `LMX_DOCS`, pointing to a directory or `docs.tar.gz`. Pass one input for each
+product: client, modules and lmx. Release builds use the documentation archives
 published with those products.
 
 </details>
@@ -224,8 +224,9 @@ one `client-release` event.
 ## When does your documentation appear?
 
 The docs workflow combines each client's `docs.tar.gz` with the documentation
-archive from its paired modules release. Shared pages and the theme come from
-the deployed docs release. Client events therefore need an initial docs release.
+archive from its paired modules release and from the lmx release that the client
+pins in `lmx.json`. Shared pages and the theme come from the deployed docs
+release. Client events therefore need an initial docs release.
 
 | Address | Content |
 | -- | -- |
@@ -235,7 +236,7 @@ the deployed docs release. Client events therefore need an initial docs release.
 
 The current site uses the highest client version among completed archives and
 the incoming pairs. Each site includes shared pages, client guides, module
-guides, and generated references in one navigation and search.
+guides, lmx guides, and generated references in one navigation and search.
 
 The version switcher shows both tags, for example **v1.3.0+1 · modules v7**. Its
 current entry opens `/`; older entries open their archives. Existing archives

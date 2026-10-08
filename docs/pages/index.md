@@ -51,6 +51,7 @@ before deleting a VM.
 | Guest service access from the Mac | [Networking](https://limanix.dev/categories/client/networking.html) |
 | Copy and paste between the Mac and the VM | [Terminal and clipboard](terminal.md) |
 | Component responsibilities and public contracts | [Architecture](https://limanix.dev/categories/client/architecture.html) |
+| What runs inside the VM: status, updates, disk upkeep and diagnostics | [lmx](https://limanix.dev/categories/lmx/index.html) |
 | A tool the catalog does not cover | [Write a module](https://limanix.dev/categories/nixos/writing-modules.html) |
 | Exact flags and configuration fields | [Reference](https://limanix.dev/categories/client/reference.html) |
 | Alternative workflows and trade-offs | [How LimaNix compares](comparison.md) |
@@ -61,6 +62,7 @@ before deleting a VM.
 | -- | -- |
 | [Client](https://github.com/limanix/client) | CLI, VM platform, lifecycle and configuration delivery |
 | [Modules](https://github.com/limanix/modules) | Guest tools, application settings, capability providers and integrations |
+| [lmx](https://github.com/limanix/lmx) | The guest owner: commands inside the VM, updates, store upkeep and diagnostics |
 | [Documentation](https://github.com/limanix/docs) | Shared pages, site theme, navigation and publication |
 
 The [release process](releases/index.md) explains which client/catalog pairs are

@@ -10,15 +10,15 @@ flowchart TD
     accDescr: Client and modules tags produce client releases whose documentation updates the site and archives. Docs tags update the current site's shared pages and theme.
     client["Client tag"] --> release["Client release"]
     modules["Modules tag"] --> rebuild["Rebuild selected clients"] --> release
-    release --> productdocs["Client + module documentation"]
+    release --> productdocs["Client, module and lmx documentation"]
     productdocs --> snapshot["Saved client versions"]
     productdocs --> site["Current complete site at /"]
     docs["Docs tag"] --> site
 ```
 
-The current site combines shared pages, client guides, module guides, and
-generated references in one navigation and search. The version switcher opens
-earlier client and module snapshots.
+The current site combines shared pages, client guides, module guides, lmx
+guides, and generated references in one navigation and search. The version
+switcher opens earlier client and module snapshots.
 
 ## Where does your change belong?
 
@@ -26,6 +26,7 @@ earlier client and module snapshots.
 | -- | -- | -- |
 | CLI, configuration, or VM behavior | `client` | `guides/` |
 | Module code, defaults, or metadata | `modules` | `guides/` and `catalog/*/README.md` |
+| Commands inside the VM, guest updates, or store upkeep | `lmx` | `guides/` |
 | Shared pages, theme, or navigation | `docs` | `docs/pages/` and `docs/conf.py` |
 
 Update product guides in the repository that owns the behavior. The site builds

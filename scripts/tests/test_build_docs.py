@@ -24,18 +24,20 @@ class BuildDocsTests(unittest.TestCase):
         (self.root / "docs/pages/index.md").write_text(self.link)
         self.client = self.root / "inputs/client"
         self.modules = self.root / "inputs/modules"
-        for directory in (self.client, self.modules):
+        self.lmx = self.root / "inputs/lmx"
+        for directory in (self.client, self.modules, self.lmx):
             directory.mkdir(parents=True)
             (directory / "index.md").write_text("# Product\n")
         (self.client / "workspace.md").write_text("# Workspace\n")
         (self.modules / "catalog.md").write_text(self.link)
+        (self.lmx / "updates.md").write_text(self.link)
         for name, value in (("ROOT", self.root), ("PAGES", self.pages)):
             patcher = patch.object(MODULE, name, value)
             patcher.start()
             self.addCleanup(patcher.stop)
 
     def test_shared_and_product_links_stay_inside_assembled_site(self):
-        MODULE.prepare(self.client, self.modules)
+        MODULE.prepare(self.client, self.modules, self.lmx)
         self.assertEqual(
             (self.pages / "index.md").read_text(),
             "[Workspace](categories/client/workspace.md#create-the-workbench)",
@@ -44,10 +46,14 @@ class BuildDocsTests(unittest.TestCase):
             (self.pages / "categories/nixos/catalog.md").read_text(),
             "[Workspace](../client/workspace.md#create-the-workbench)",
         )
+        self.assertEqual(
+            (self.pages / "categories/lmx/updates.md").read_text(),
+            "[Workspace](../client/workspace.md#create-the-workbench)",
+        )
         self.assertTrue((self.pages / "categories/client/workspace.md").is_file())
 
     def test_shared_only_build_keeps_published_product_links(self):
-        MODULE.prepare(None, None)
+        MODULE.prepare(None, None, None)
         self.assertEqual((self.pages / "index.md").read_text(), self.link)
         self.assertFalse((self.pages / "categories").exists())
 
@@ -56,12 +62,12 @@ class BuildDocsTests(unittest.TestCase):
         sentinel = self.pages / "index.md"
         sentinel.write_text("previous successful build")
         with self.assertRaisesRegex(ValueError, "provided together"):
-            MODULE.prepare(self.client, None)
+            MODULE.prepare(self.client, self.modules, None)
         self.assertEqual(sentinel.read_text(), "previous successful build")
 
     def test_cleanup_refuses_to_overlap_prepared_input(self):
         with self.assertRaisesRegex(ValueError, "overlaps"):
-            MODULE.clean_output("build/site", self.root / "build/site/client", None)
+            MODULE.clean_output("build/site", self.root / "build/site/client")
 
 
 if __name__ == "__main__":
