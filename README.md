@@ -23,16 +23,16 @@ assembles them with the shared pages into one site.
 ## Get started
 
 Local builds require [Task](https://taskfile.dev) 3.53.1 or newer and Docker
-with a running engine. Keep the `client`, `modules` and `docs` checkouts side by
-side. From the `docs` checkout, build and preview the complete site:
+with a running engine. Keep the `client`, `modules`, `lmx` and `docs` checkouts
+side by side. From the `docs` checkout, build and preview the complete site:
 
 ```console
-task --yes ci/static-build CLIENT_ROOT=../client MODULES_ROOT=../modules
-task --yes docs/serve CLIENT_ROOT=../client MODULES_ROOT=../modules
+task --yes ci/static/build CLIENT_ROOT=../client MODULES_ROOT=../modules LMX_ROOT=../lmx
+task --yes docs/serve CLIENT_ROOT=../client MODULES_ROOT=../modules LMX_ROOT=../lmx
 ```
 
 The build writes HTML to `build/docs`. Open <http://127.0.0.1:8040> for the
-preview, which rebuilds when shared pages or product sources change. Omit both
+preview, which rebuilds when shared pages or product sources change. Omit all
 product inputs to build or preview only the shared pages. See
 [Build and preview documentation locally](docs/pages/releases/workflow.md) for
 prepared documentation inputs and local checks.

@@ -4,7 +4,8 @@ silent: true
 
 includes:
   terraform:
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.4/taskfiles/terraform/Taskfile.yml
+    # v0.0.5
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/terraform/Taskfile.yml
     internal: true
     vars:
       TERRAFORM_VERSION: '1.15.9'
@@ -12,10 +13,12 @@ includes:
         AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_REGION AWS_DEFAULT_REGION
         TF_VAR_aws_region TF_VAR_domain_name TF_VAR_site_bucket_name TF_VAR_acm_certificate_arn
   python:
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.4/taskfiles/python/Taskfile.yml
+    # v0.0.5
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/python/Taskfile.yml
     internal: true
   markdown:
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/v0.0.5/taskfiles/markdown/Taskfile.yml
+    # v0.0.5
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/markdown/Taskfile.yml
     internal: true
 
 vars:
@@ -27,6 +30,9 @@ vars:
   MODULES_ROOT: '{{.MODULES_ROOT | default ""}}'
   MODULES_DOCS: '{{.MODULES_DOCS | default ""}}'
   MODULES_REF:  '{{.MODULES_REF  | default ""}}'
+  LMX_ROOT:     '{{.LMX_ROOT     | default ""}}'
+  LMX_DOCS:     '{{.LMX_DOCS     | default ""}}'
+  LMX_REF:      '{{.LMX_REF      | default ""}}'
 
   client_docs: >-
     {{if .CLIENT_ROOT}}{{joinPath .ROOT_DIR "build/client-docs/docs.tar.gz"}}
@@ -36,19 +42,25 @@ vars:
     {{if .MODULES_ROOT}}{{joinPath .ROOT_DIR "build/modules-docs/docs.tar.gz"}}
     {{- else if isAbs .MODULES_DOCS}}{{clean .MODULES_DOCS}}
     {{- else if .MODULES_DOCS}}{{joinPath .ROOT_DIR .MODULES_DOCS}}{{end}}
+  lmx_docs: >-
+    {{if .LMX_ROOT}}{{joinPath .ROOT_DIR "build/lmx-docs/docs.tar.gz"}}
+    {{- else if isAbs .LMX_DOCS}}{{clean .LMX_DOCS}}
+    {{- else if .LMX_DOCS}}{{joinPath .ROOT_DIR .LMX_DOCS}}{{end}}
 
-  archive_tasks: '{{if .CLIENT_ROOT}}_docs/archive/client {{end}}{{if .MODULES_ROOT}}_docs/archive/modules{{end}}'
+  archive_tasks: '{{if .CLIENT_ROOT}}_docs/archive/client {{end}}{{if .MODULES_ROOT}}_docs/archive/modules {{end}}{{if .LMX_ROOT}}_docs/archive/lmx{{end}}'
 
   docs_volumes: >-
     {{with .client_docs}}{{printf "%s:/inputs/client:ro" (dir .) | shellQuote}}{{end}}
     {{with .modules_docs}}{{printf "%s:/inputs/modules:ro" (dir .) | shellQuote}}{{end}}
+    {{with .lmx_docs}}{{printf "%s:/inputs/lmx:ro" (dir .) | shellQuote}}{{end}}
   docs_prepare: >-
     python scripts/build_docs.py
     {{with .client_docs}}--client-docs {{printf "/inputs/client/%s" (base .) | shellQuote}}{{end}}
     {{with .modules_docs}}--modules-docs {{printf "/inputs/modules/%s" (base .) | shellQuote}}{{end}}
+    {{with .lmx_docs}}--lmx-docs {{printf "/inputs/lmx/%s" (base .) | shellQuote}}{{end}}
 
 tasks:
-  ci/markdown-fmt:
+  ci/markdown/fmt:
     desc: Check source Markdown formatting without modifying files
     cmds:
       - task: markdown:fmt
@@ -64,17 +76,17 @@ tasks:
         vars:
           FMT_PATHS: '{{.markdown_paths}}'
 
-  ci/terraform-fmt:
+  ci/terraform/fmt:
     desc: Run Tf fmt check
     cmds:
       - task: terraform:fmt
 
-  ci/terraform-validate:
+  ci/terraform/validate:
     desc: Run Tf validate
     cmds:
       - task: terraform:validate
 
-  ci/terraform-plan:
+  ci/terraform/plan:
     desc: Run Tf plan
     requires:
       vars: [TF_STATE_BUCKET, TF_STATE_KEY, TF_STATE_REGION]
@@ -89,7 +101,7 @@ tasks:
             -backend-config=use_lockfile=true
             -backend-config=encrypt=true
 
-  ci/static-build:
+  ci/static/build:
     desc: Build docs
     vars:
       output: '{{.DOCS_OUTPUT | default "build/docs"}}'
@@ -104,14 +116,14 @@ tasks:
           CONTAINER_ENVS: CLIENT_TAG MODULES_TAG
           CONTAINER_VOLUMES: '{{.docs_volumes}}'
 
-  ci/static-audit:
+  ci/static/audit:
     desc: Run Python audit
     cmds:
       - task: python:_uv/tool
         vars:
           CMD: uv audit --locked --preview-features audit-command
 
-  ci/static-test:
+  ci/static/test:
     desc: Run Python checks
     cmds:
       - task: python:fmt
@@ -145,8 +157,14 @@ tasks:
         msg: MODULES_ROOT must be an existing directory.
       - sh: test -z {{.MODULES_DOCS | shellQuote}} || test -e {{.modules_docs | shellQuote}}
         msg: MODULES_DOCS must be an existing directory or archive.
-      - sh: test {{empty .client_docs}} = {{empty .modules_docs}}
-        msg: Pass CLIENT_ROOT or CLIENT_DOCS with MODULES_ROOT or MODULES_DOCS, or omit all four.
+      - sh: test -z {{.LMX_ROOT | shellQuote}} || test -z {{.LMX_DOCS | shellQuote}}
+        msg: Set LMX_ROOT or LMX_DOCS, not both.
+      - sh: test -z {{.LMX_ROOT | shellQuote}} || test -d {{.LMX_ROOT | shellQuote}}
+        msg: LMX_ROOT must be an existing directory.
+      - sh: test -z {{.LMX_DOCS | shellQuote}} || test -e {{.lmx_docs | shellQuote}}
+        msg: LMX_DOCS must be an existing directory or archive.
+      - sh: test {{empty .client_docs}} = {{empty .modules_docs}} && test {{empty .client_docs}} = {{empty .lmx_docs}}
+        msg: Pass the client, modules and lmx documentation together (a *_ROOT or *_DOCS for each), or omit all of them.
     cmds:
       - for: { var: archive_tasks }
         task: '{{.ITEM}}'
@@ -167,6 +185,14 @@ tasks:
           ROOT: '{{.MODULES_ROOT}}'
           ARGS: '{{with .MODULES_REF}}{{printf "MODULES_REF=%s" . | shellQuote}}{{end}}'
 
+  _docs/archive/lmx:
+    cmds:
+      - task: _docs/archive
+        vars:
+          PRODUCT: lmx
+          ROOT: '{{.LMX_ROOT}}'
+          ARGS: '{{with .LMX_REF}}{{printf "LMX_REF=%s" . | shellQuote}}{{end}}'
+
   _docs/archive:
     internal: true
     label: 'docs archive: {{.PRODUCT}}'
@@ -182,6 +208,8 @@ tasks:
       - exclude: '{{.ROOT}}/.task/**/*'
       - exclude: '{{.ROOT}}/build/**/*'
       - exclude: '{{.ROOT}}/.cache/**/*'
+      - exclude: '{{.ROOT}}/target/**/*'
+      - exclude: '{{.ROOT}}/dist/**/*'
       - exclude: '{{.ROOT}}/**/.DS_Store'
       - exclude: '{{.ROOT}}/**/__pycache__/**/*'
       - exclude: '{{.ROOT}}/internal/nixos/resources/modules.zip'
@@ -207,6 +235,7 @@ tasks:
           task --watch --interval 1s {{.archive_tasks}} INCREMENTAL=true
           {{printf "CLIENT_ROOT=%s" .CLIENT_ROOT | shellQuote}} {{printf "CLIENT_TAG=%s" .CLIENT_TAG | shellQuote}}
           {{printf "MODULES_ROOT=%s" .MODULES_ROOT | shellQuote}} {{printf "MODULES_REF=%s" .MODULES_REF | shellQuote}}
+          {{printf "LMX_ROOT=%s" .LMX_ROOT | shellQuote}} {{printf "LMX_REF=%s" .LMX_REF | shellQuote}}
         if: test -n {{.archive_tasks | shellQuote}}
 
   _docs/autobuild:
@@ -216,6 +245,7 @@ tasks:
       watch_inputs: >-
         {{with .client_docs}}--watch {{if hasSuffix ".tar.gz" .}}/inputs/client{{else}}{{printf "/inputs/client/%s" (base .) | shellQuote}}{{end}}{{end}}
         {{with .modules_docs}}--watch {{if hasSuffix ".tar.gz" .}}/inputs/modules{{else}}{{printf "/inputs/modules/%s" (base .) | shellQuote}}{{end}}{{end}}
+        {{with .lmx_docs}}--watch {{if hasSuffix ".tar.gz" .}}/inputs/lmx{{else}}{{printf "/inputs/lmx/%s" (base .) | shellQuote}}{{end}}{{end}}
     cmds:
       - mkdir -p build/docs-pages
       - task: python:_uv/tool

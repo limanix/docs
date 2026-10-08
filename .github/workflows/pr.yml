@@ -18,12 +18,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
-          command: ci/markdown-fmt
+          command: ci/markdown/fmt
 
   plan:
     runs-on: ubuntu-24.04
@@ -31,7 +31,7 @@ jobs:
     outputs:
       infrastructure: ${{ steps.paths.outputs.infrastructure }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -56,13 +56,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: [ci/terraform-fmt, ci/terraform-validate]
+        task: [ci/terraform/fmt, ci/terraform/validate]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Restore provider cache
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/terraform
           key: terraform-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tf/.terraform.lock.hcl') }}
@@ -87,15 +87,15 @@ jobs:
       TF_VAR_site_bucket_name: ${{ vars.SITE_BUCKET_NAME }}
       TF_VAR_acm_certificate_arn: ${{ vars.SITE_ACM_CERTIFICATE_ARN }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Restore provider cache
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/terraform
           key: terraform-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tf/.terraform.lock.hcl') }}
-      - uses: aws-actions/configure-aws-credentials@v6
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
@@ -103,7 +103,7 @@ jobs:
         timeout-minutes: 15
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
-          command: ci/terraform-plan
+          command: ci/terraform/plan
 
   static-ci:
     name: ${{ matrix.task }}
@@ -112,13 +112,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: [ci/static-test, ci/static-audit, ci/static-build]
+        task: [ci/static/test, ci/static/audit, ci/static/build]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Restore documentation dependency cache
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/python
           key: docs-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.task }}-${{ hashFiles('uv.lock') }}-${{ github.sha }}

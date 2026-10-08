@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PAGES = ROOT / "build" / "docs-pages"
 SITE_GUIDE_LINK = re.compile(
-    r"\]\(https://limanix\.dev/categories/(client|nixos)/([\w/-]+)\.html(#[^\s)]*)?\)"
+    r"\]\(https://limanix\.dev/categories/(client|nixos|lmx)/([\w/-]+)\.html(#[^\s)]*)?\)"
 )
 
 
@@ -38,10 +38,10 @@ def rewrite_site_guide_links(content: str, page: Path) -> str:
     return SITE_GUIDE_LINK.sub(replace, content)
 
 
-def prepare(client: Path | None, modules: Path | None) -> None:
-    if (client is None) != (modules is None):
+def prepare(client: Path | None, modules: Path | None, lmx: Path | None) -> None:
+    if len({source is None for source in (client, modules, lmx)}) > 1:
         raise ValueError(
-            "prepared client and module documentation must be provided together"
+            "prepared client, module and lmx documentation must be provided together"
         )
 
     if PAGES.is_symlink():
@@ -55,6 +55,7 @@ def prepare(client: Path | None, modules: Path | None) -> None:
     categories = PAGES / "categories"
     copy_prepared(client, categories / "client", "client")
     copy_prepared(modules, categories / "nixos", "module")
+    copy_prepared(lmx, categories / "lmx", "lmx")
 
     for page in PAGES.rglob("*.md"):
         original = page.read_text(encoding="utf-8")
@@ -64,7 +65,10 @@ def prepare(client: Path | None, modules: Path | None) -> None:
 
 
 def clean_output(
-    value: str, client: Path | None = None, modules: Path | None = None
+    value: str,
+    client: Path | None = None,
+    modules: Path | None = None,
+    lmx: Path | None = None,
 ) -> None:
     output = (ROOT / value).resolve()
     build = (ROOT / "build").resolve()
@@ -74,7 +78,7 @@ def clean_output(
         or output.is_relative_to(PAGES.resolve())
     ):
         raise ValueError(f"output must be a directory under {build}, excluding {PAGES}")
-    for source in (client, modules):
+    for source in (client, modules, lmx):
         if source is not None:
             resolved_source = source.resolve()
             if output.is_relative_to(resolved_source) or resolved_source.is_relative_to(
@@ -96,14 +100,19 @@ def main() -> int:
         "--modules-docs", type=Path, help="Prepared directory or docs.tar.gz"
     )
     parser.add_argument(
+        "--lmx-docs", type=Path, help="Prepared directory or docs.tar.gz"
+    )
+    parser.add_argument(
         "--clean-output", help="Remove an HTML output directory under build/"
     )
     args = parser.parse_args()
 
     try:
         if args.clean_output:
-            clean_output(args.clean_output, args.client_docs, args.modules_docs)
-        prepare(args.client_docs, args.modules_docs)
+            clean_output(
+                args.clean_output, args.client_docs, args.modules_docs, args.lmx_docs
+            )
+        prepare(args.client_docs, args.modules_docs, args.lmx_docs)
     except (OSError, ValueError, tarfile.TarError) as error:
         print(f"build_docs: {error}", file=sys.stderr)
         return 1

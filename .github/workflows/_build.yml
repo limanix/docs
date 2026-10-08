@@ -31,12 +31,12 @@ jobs:
       CLIENT_TAG: ${{ inputs.client-tag }}
       MODULES_TAG: ${{ inputs.modules-tag }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.docs-ref || github.sha }}
           persist-credentials: false
       - name: Restore documentation dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/python
           key: docs-build-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('uv.lock') }}-${{ github.sha }}
@@ -57,12 +57,23 @@ jobs:
         run: |
           mkdir -p build/inputs/modules
           gh release download "$MODULES_TAG" --repo limanix/modules --pattern docs.tar.gz --dir build/inputs/modules
+      - name: Download lmx docs
+        if: inputs.client-tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # The client release pins the lmx release that its guests run.
+          lmx_version=$(gh api -H 'Accept: application/vnd.github.raw+json' \
+            "repos/limanix/client/contents/internal/nixos/resources/base/lmx.json?ref=$CLIENT_TAG" | jq -er .version)
+          mkdir -p build/inputs/lmx
+          gh release download "v$lmx_version" --repo limanix/lmx --pattern docs.tar.gz --dir build/inputs/lmx
       - name: Build docs
         uses: mr-chelyshkin/actions/invoke-taskfile@v1
         with:
           command: >-
-            ci/static-build
-            ${{ inputs.client-tag != '' && 'CLIENT_DOCS=build/inputs/client/docs.tar.gz MODULES_DOCS=build/inputs/modules/docs.tar.gz' || '' }}
+            ci/static/build
+            ${{ inputs.client-tag != '' && 'CLIENT_DOCS=build/inputs/client/docs.tar.gz MODULES_DOCS=build/inputs/modules/docs.tar.gz LMX_DOCS=build/inputs/lmx/docs.tar.gz' || '' }}
       - name: Check version
         if: inputs.client-tag != ''
         run: |
@@ -83,7 +94,7 @@ jobs:
           mv build/docs "build/artifacts/$ARTIFACT_NAME"
       - name: Upload docs
         if: inputs.artifact-name != ''
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.artifact-name }}
           if-no-files-found: error

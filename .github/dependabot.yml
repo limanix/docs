@@ -1,0 +1,29 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ['*']
+    labels:
+      - deps
+
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      uv:
+        update-types: [minor, patch]
+    labels:
+      - deps
+
+  - package-ecosystem: terraform
+    directory: /tf
+    schedule:
+      interval: weekly
+    labels:
+      - deps
