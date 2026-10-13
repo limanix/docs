@@ -4,21 +4,22 @@ silent: true
 
 includes:
   terraform:
-    # v0.0.5
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/terraform/Taskfile.yml
+    # v0.1.0
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/3aa8c569bdc71b41fa50fc33f66e2ef1317813ed/taskfiles/terraform/Taskfile.yml
     internal: true
     vars:
       TERRAFORM_VERSION: '1.15.9'
+      TERRAFORM_DIR: tf
       CONTAINER_ENVS: >-
         AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_REGION AWS_DEFAULT_REGION
         TF_VAR_aws_region TF_VAR_domain_name TF_VAR_site_bucket_name TF_VAR_acm_certificate_arn
   python:
-    # v0.0.5
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/python/Taskfile.yml
+    # v0.1.0
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/3aa8c569bdc71b41fa50fc33f66e2ef1317813ed/taskfiles/python/Taskfile.yml
     internal: true
   markdown:
-    # v0.0.5
-    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/81255f635d839a2b46417720676cd2bebfc10cff/taskfiles/markdown/Taskfile.yml
+    # v0.1.0
+    taskfile: https://raw.githubusercontent.com/mr-chelyshkin/tasks/3aa8c569bdc71b41fa50fc33f66e2ef1317813ed/taskfiles/markdown/Taskfile.yml
     internal: true
 
 vars:
@@ -65,16 +66,14 @@ tasks:
     cmds:
       - task: markdown:fmt
         vars:
-          FMT_PATHS: '{{.markdown_paths}}'
-          TASK_CONTEXT:
-            ref: 'merge (dict) (dict "CONTAINER_MOUNT_MODE" "ro") (.TASK_CONTEXT | default .)'
+          FMT_ARGS: '{{.markdown_paths}}'
 
   markdown/fix:
     desc: Format source Markdown with the same settings used in CI
     cmds:
       - task: markdown:fmt/fix
         vars:
-          FMT_PATHS: '{{.markdown_paths}}'
+          FMT_ARGS: '{{.markdown_paths}}'
 
   ci/terraform/fmt:
     desc: Run Tf fmt check
@@ -110,7 +109,7 @@ tasks:
         exec sphinx-build -E -W --keep-going -b html -c docs build/docs-pages {{.output | shellQuote}}
     cmds:
       - task: _docs/inputs
-      - task: python:_uv/tool
+      - task: python:exec
         vars:
           CMD: uv run --locked --group docs sh -eu -c {{.build | shellQuote}}
           CONTAINER_ENVS: CLIENT_TAG MODULES_TAG
@@ -119,7 +118,7 @@ tasks:
   ci/static/audit:
     desc: Run Python audit
     cmds:
-      - task: python:_uv/tool
+      - task: python:exec
         vars:
           CMD: uv audit --locked --preview-features audit-command
 
@@ -128,11 +127,11 @@ tasks:
     cmds:
       - task: python:fmt
         vars:
-          FMT_ARGS: --check scripts docs/conf.py
+          FMT_ARGS: scripts docs/conf.py
       - task: python:lint
         vars:
           LINT_ARGS: scripts docs/conf.py
-      - task: python:_uv/tool
+      - task: python:exec
         vars:
           CMD: uv run --locked python -B -m unittest discover -s scripts/tests
 
@@ -248,7 +247,7 @@ tasks:
         {{with .lmx_docs}}--watch {{if hasSuffix ".tar.gz" .}}/inputs/lmx{{else}}{{printf "/inputs/lmx/%s" (base .) | shellQuote}}{{end}}{{end}}
     cmds:
       - mkdir -p build/docs-pages
-      - task: python:_uv/tool
+      - task: python:exec
         vars:
           CMD: >-
             uv run --locked --group docs sphinx-autobuild

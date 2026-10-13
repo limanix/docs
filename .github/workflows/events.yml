@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: mr-chelyshkin/actions/check-job-results@v1
+      - uses: mr-chelyshkin/actions/job-results-check@v2
         with:
           results: ${{ toJSON(needs) }}
 

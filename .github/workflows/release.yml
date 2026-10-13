@@ -21,11 +21,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Check release tag
-        uses: mr-chelyshkin/actions/check-tag-format@v1
+        uses: mr-chelyshkin/actions/tag-format-check@v2
         with:
           pattern: '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
       - name: Check release branch
-        uses: mr-chelyshkin/actions/check-tag-branch@v1
+        uses: mr-chelyshkin/actions/tag-branch-check@v2
         with:
           branch: main
 
@@ -41,9 +41,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: mr-chelyshkin/actions/invoke-taskfile@v1
+      - uses: mr-chelyshkin/actions/task-run@v2
         with:
-          command: ${{ matrix.task }}
+          task: ${{ matrix.task }}
 
   gate:
     if: always()
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: mr-chelyshkin/actions/check-job-results@v1
+      - uses: mr-chelyshkin/actions/job-results-check@v2
         with:
           results: ${{ toJSON(needs) }}
 
@@ -76,22 +76,22 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
       - name: Apply site infrastructure
         id: apply
-        uses: mr-chelyshkin/actions/terraform-apply@v1
+        uses: mr-chelyshkin/actions/terraform-apply@v2
         env:
           TF_VAR_aws_region: ${{ vars.AWS_REGION }}
           TF_VAR_domain_name: ${{ vars.SITE_DOMAIN_NAME }}
           TF_VAR_site_bucket_name: ${{ vars.SITE_BUCKET_NAME }}
           TF_VAR_acm_certificate_arn: ${{ vars.SITE_ACM_CERTIFICATE_ARN }}
         with:
-          version: '1.15.9'
-          workdir: tf
-          backend-bucket: ${{ vars.TF_STATE_BUCKET }}
-          backend-key: ${{ vars.TF_STATE_KEY }}
-          backend-region: ${{ vars.TF_STATE_REGION }}
+          terraform-version: '1.15.9'
+          working-directory: tf
+          terraform-state-bucket: ${{ vars.TF_STATE_BUCKET }}
+          terraform-state-key: ${{ vars.TF_STATE_KEY }}
+          terraform-state-region: ${{ vars.TF_STATE_REGION }}
       - name: Read CloudFront distribution
         id: site
         env:
-          TF_OUTPUTS: ${{ steps.apply.outputs.outputs }}
+          TF_OUTPUTS: ${{ steps.apply.outputs.terraform-outputs }}
         run: |
           distribution_id=$(jq -er '.cloudfront_distribution_id.value' <<< "$TF_OUTPUTS")
           printf 'distribution-id=%s\n' "$distribution_id" >> "$GITHUB_OUTPUT"
