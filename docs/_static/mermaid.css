@@ -8,3 +8,33 @@ pre.mermaid {
     border: 0;
     padding: 0;
 }
+
+/* Mermaid's generated rules contain an SVG id; override only their colors. */
+pre.mermaid .node :is(rect, circle, ellipse, polygon, path) {
+    fill: var(--pst-color-primary-bg) !important;
+    stroke: var(--pst-color-primary) !important;
+}
+
+pre.mermaid .cluster rect {
+    fill: var(--pst-color-surface) !important;
+    stroke: var(--pst-color-border) !important;
+}
+
+pre.mermaid :is(.label text, .nodeLabel, .cluster-label text, .edgeLabel text, .flowchartTitleText) {
+    fill: var(--pst-color-text-base) !important;
+    color: var(--pst-color-text-base) !important;
+}
+
+pre.mermaid :is(.flowchart-link, .edgePath .path) {
+    stroke: var(--pst-color-text-muted) !important;
+}
+
+pre.mermaid :is(marker path, .arrowheadPath) {
+    fill: var(--pst-color-text-muted) !important;
+    stroke: var(--pst-color-text-muted) !important;
+}
+
+pre.mermaid :is(.edgeLabel rect, .labelBkg) {
+    fill: var(--pst-color-background) !important;
+    background: var(--pst-color-background) !important;
+}

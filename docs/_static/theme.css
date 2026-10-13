@@ -1,0 +1,137 @@
+/* GitHub Primer Light / Dark, shared by the UI, code examples and diagrams.
+ * Source: https://github.com/primer/primitives/tree/66e78d332cc536e471bcaeb3f8ad08dc16cfbb8a/src/tokens
+ */
+html:not([data-theme]),
+html[data-theme="light"] {
+    --pst-color-primary: #0969da;
+    --pst-color-primary-highlight: #0550ae;
+    --pst-color-primary-bg: #ddf4ff;
+    --pst-color-primary-text: #ffffff;
+    --pst-color-background: #ffffff;
+    --pst-color-on-background: #ffffff;
+    --pst-color-surface: #f6f8fa;
+    --pst-color-on-surface: #1f2328;
+    --pst-color-text-base: #1f2328;
+    --pst-color-text-muted: #59636e;
+    --pst-color-border: #d1d9e0;
+    --pst-color-border-muted: rgb(209 217 224 / 70%);
+    --pst-color-shadow: rgb(31 35 40 / 12%);
+    --pst-color-info: #0969da;
+    --pst-color-info-bg: #ddf4ff;
+    --pst-color-success: #1a7f37;
+    --pst-color-success-bg: #dafbe1;
+    --pst-color-warning: #9a6700;
+    --pst-color-warning-bg: #fff8c5;
+    --pst-color-danger: #d1242f;
+    --pst-color-danger-bg: #ffebe9;
+    --lmx-sidebar-bg: #f6f8fa;
+    --lmx-code-comment: #59636e;
+    --lmx-code-keyword: #cf222e;
+    --lmx-code-string: #0a3069;
+    --lmx-code-number: #0550ae;
+    --lmx-code-function: #6639ba;
+    --lmx-code-range: rgb(9 105 218 / 10%);
+    --lmx-code-variable: #953800;
+    --lmx-code-tag: #0550ae;
+    --lmx-selection-bg: rgb(9 105 218 / 20%);
+    --lmx-inline-code-bg: rgb(129 139 152 / 12%);
+}
+
+html[data-theme="dark"] {
+    --pst-color-primary: #4493f8;
+    --pst-color-primary-highlight: #79c0ff;
+    --pst-color-primary-bg: rgb(56 139 253 / 10%);
+    --pst-color-primary-text: #0d1117;
+    --pst-color-background: #0d1117;
+    --pst-color-on-background: #151b23;
+    --pst-color-surface: #151b23;
+    --pst-color-on-surface: #f0f6fc;
+    --pst-color-text-base: #f0f6fc;
+    --pst-color-text-muted: #9198a1;
+    --pst-color-border: #3d444d;
+    --pst-color-border-muted: rgb(61 68 77 / 70%);
+    --pst-color-shadow: rgb(1 4 9 / 24%);
+    --pst-color-info: #4493f8;
+    --pst-color-info-bg: rgb(56 139 253 / 10%);
+    --pst-color-success: #3fb950;
+    --pst-color-success-bg: rgb(46 160 67 / 15%);
+    --pst-color-warning: #d29922;
+    --pst-color-warning-bg: rgb(187 128 9 / 15%);
+    --pst-color-danger: #f85149;
+    --pst-color-danger-bg: rgb(248 81 73 / 10%);
+    --lmx-sidebar-bg: #151b23;
+    --lmx-code-comment: #9198a1;
+    --lmx-code-keyword: #ff7b72;
+    --lmx-code-string: #a5d6ff;
+    --lmx-code-number: #79c0ff;
+    --lmx-code-function: #d2a8ff;
+    --lmx-code-range: var(--pst-color-primary-bg);
+    --lmx-code-variable: #ffa657;
+    --lmx-code-tag: #7ee787;
+    --lmx-selection-bg: rgb(31 111 235 / 70%);
+    --lmx-inline-code-bg: rgb(101 108 118 / 20%);
+}
+
+html:not([data-theme]),
+html[data-theme] {
+    --pst-color-primary-highlight-text: var(--pst-color-primary-text);
+    --pst-color-secondary: var(--pst-color-primary);
+    --pst-color-secondary-bg: var(--pst-color-primary-bg);
+    --pst-color-secondary-text: var(--pst-color-primary-text);
+    --pst-color-secondary-highlight: var(--pst-color-primary-highlight);
+    --pst-color-secondary-highlight-text: var(--pst-color-primary-text);
+    --pst-color-accent: var(--pst-color-primary);
+    --pst-color-accent-bg: var(--pst-color-primary-bg);
+    --pst-color-link: var(--pst-color-primary);
+    --pst-color-link-hover: var(--pst-color-primary-highlight);
+    --pst-color-link-higher-contrast: var(--pst-color-primary-highlight);
+    --pst-color-heading: var(--pst-color-text-base);
+    --pst-color-inline-code: var(--pst-color-text-base);
+    --pst-color-target: var(--pst-color-primary-bg);
+    --pst-color-blockquote-notch: var(--pst-color-border);
+    --pst-color-table: var(--pst-color-text-base);
+    --pst-color-table-outer-border: var(--pst-color-border-muted);
+    --pst-color-table-inner-border: var(--pst-color-border-muted);
+    --pst-color-table-heading-bg: var(--pst-color-surface);
+    --pst-color-table-row-zebra-high-bg: var(--pst-color-background);
+    --pst-color-table-row-zebra-low-bg: var(--lmx-sidebar-bg);
+    --pst-color-table-row-hover-bg: var(--pst-color-primary-bg);
+}
+
+::selection {
+    color: var(--pst-color-text-base);
+    background: var(--lmx-selection-bg);
+}
+
+code.literal {
+    background: var(--lmx-inline-code-bg);
+    border: 0;
+}
+
+.bd-sidebar-primary {
+    background: var(--lmx-sidebar-bg);
+}
+
+.bd-article :is(table, details, .admonition) {
+    border-radius: 0.5rem;
+}
+
+.bd-article details {
+    border: 1px solid var(--pst-color-border-muted);
+    background: var(--pst-color-on-background);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.bd-article summary {
+    color: var(--pst-color-text-base);
+    cursor: pointer;
+}
+
+.bd-article summary:hover {
+    color: var(--pst-color-link-hover);
+}
+
+.bd-article details[open] > summary {
+    margin-bottom: 0.75rem;
+}
