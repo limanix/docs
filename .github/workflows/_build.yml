@@ -69,11 +69,13 @@ jobs:
           mkdir -p build/inputs/lmx
           gh release download "v$lmx_version" --repo limanix/lmx --pattern docs.tar.gz --dir build/inputs/lmx
       - name: Build docs
-        uses: mr-chelyshkin/actions/invoke-taskfile@v1
+        uses: mr-chelyshkin/actions/task-run@v2
         with:
-          command: >-
-            ci/static/build
-            ${{ inputs.client-tag != '' && 'CLIENT_DOCS=build/inputs/client/docs.tar.gz MODULES_DOCS=build/inputs/modules/docs.tar.gz LMX_DOCS=build/inputs/lmx/docs.tar.gz' || '' }}
+          task: ci/static/build
+          args: |
+            ${{ inputs.client-tag != '' && 'CLIENT_DOCS=build/inputs/client/docs.tar.gz' || '' }}
+            ${{ inputs.client-tag != '' && 'MODULES_DOCS=build/inputs/modules/docs.tar.gz' || '' }}
+            ${{ inputs.client-tag != '' && 'LMX_DOCS=build/inputs/lmx/docs.tar.gz' || '' }}
       - name: Check version
         if: inputs.client-tag != ''
         run: |
