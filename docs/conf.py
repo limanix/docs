@@ -31,6 +31,7 @@ html_theme_options = {
 
 html_static_path = ["_static"]
 html_css_files = [
+    "theme.css",
     "mermaid.css",
     "toolbar.css",
     "vendor/prism/prism-line-numbers.css",

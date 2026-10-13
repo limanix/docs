@@ -1,20 +1,71 @@
-/* Theme Prism examples with the site's light/dark palette. */
-.code-example {
-    --code-comment: #63748b;
-    --code-keyword: #7c3aed;
-    --code-string: #166534;
-    --code-number: #0369a1;
-    --code-function: #9a3412;
-    --code-range: rgb(37 99 235 / 12%);
+/* Pygments and Prism share the semantic colors defined in theme.css. */
+html[data-theme] .highlight,
+html[data-theme] .highlight pre {
+    color: var(--pst-color-text-base);
+    background: var(--pst-color-surface);
+    border-color: var(--pst-color-border-muted);
+    border-radius: 0.5rem;
 }
 
-html[data-theme="dark"] .code-example {
-    --code-comment: #94a3b8;
-    --code-keyword: #c4b5fd;
-    --code-string: #86efac;
-    --code-number: #7dd3fc;
-    --code-function: #fdba74;
-    --code-range: rgb(96 165 250 / 18%);
+html[data-theme] .highlight pre {
+    line-height: 1.65;
+}
+
+html[data-theme] .highlight :is(.n, .nn, .nx, .w, .go) {
+    color: var(--pst-color-text-base);
+}
+
+html[data-theme] .highlight :is(.c, .ch, .cm, .cp, .cpf, .c1, .cs) {
+    color: var(--lmx-code-comment);
+}
+
+html[data-theme] .highlight :is(.k, .kd, .kn, .kp, .kr, .kt, .ow, .o) {
+    color: var(--lmx-code-keyword);
+}
+
+html[data-theme] .highlight :is(.s, .sa, .sb, .sc, .dl, .sd, .s2, .se, .sh, .si, .sx, .sr, .s1, .ss, .ni) {
+    color: var(--lmx-code-string);
+}
+
+html[data-theme] .highlight :is(.m, .mb, .mf, .mh, .mi, .mo, .il, .l, .ld, .kc, .na, .nb, .no, .py) {
+    color: var(--lmx-code-number);
+}
+
+html[data-theme] .highlight :is(.nc, .nd, .ne, .nf, .fm, .nl) {
+    color: var(--lmx-code-function);
+}
+
+html[data-theme] .highlight :is(.bp, .nv, .vc, .vg, .vi, .vm) {
+    color: var(--lmx-code-variable);
+}
+
+html[data-theme] .highlight .nt {
+    color: var(--lmx-code-tag);
+}
+
+html[data-theme] .highlight :is(.p, .pm) {
+    color: var(--pst-color-text-base);
+}
+
+html[data-theme] .highlight .linenos {
+    color: var(--pst-color-text-muted);
+}
+
+html[data-theme] .highlight :is(.gp, .gh, .gu) {
+    color: var(--pst-color-primary);
+}
+
+html[data-theme] .highlight :is(.err, .gr, .gt, .gd) {
+    color: var(--pst-color-danger);
+}
+
+html[data-theme] .highlight .gi {
+    color: var(--pst-color-success);
+}
+
+html[data-theme] .highlight :is(.hll, .linenos.special) {
+    color: inherit;
+    background: var(--lmx-code-range);
 }
 
 .code-example pre[class*="language-"] {
@@ -43,23 +94,29 @@ html[data-theme="dark"] .code-example {
     color: var(--pst-color-text-muted);
 }
 
+.code-example pre[id].linkable-line-numbers .line-numbers-rows > span:hover::before {
+    color: var(--pst-color-primary);
+    background: var(--pst-color-primary-bg);
+}
+
 .code-example .line-highlight {
     margin-top: 1em;
-    background: var(--code-range);
+    background: var(--lmx-code-range);
     box-shadow: inset 3px 0 var(--pst-color-primary);
     scroll-margin-top: 5rem;
 }
 
-.code-example .token.comment { color: var(--code-comment); }
+.code-example .token.comment { color: var(--lmx-code-comment); }
 .code-example .token.keyword,
-.code-example .token.boolean { color: var(--code-keyword); }
+.code-example .token.operator { color: var(--lmx-code-keyword); }
 .code-example .token.string,
-.code-example .token.url { color: var(--code-string); }
-.code-example .token.number { color: var(--code-number); }
-.code-example .token.function,
-.code-example .token.property { color: var(--code-function); }
-.code-example .token.operator,
-.code-example .token.punctuation { color: var(--pst-color-text-muted); }
+.code-example .token.url { color: var(--lmx-code-string); }
+.code-example .token.number,
+.code-example .token.boolean,
+.code-example .token.property { color: var(--lmx-code-number); }
+.code-example .token.function { color: var(--lmx-code-function); }
+.code-example .token.variable { color: var(--lmx-code-variable); }
+.code-example .token.punctuation { color: var(--pst-color-text-base); }
 
 a.code-lines {
     white-space: nowrap;
