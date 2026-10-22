@@ -4,13 +4,13 @@
   --vp-font-family-mono:
     'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-  --vp-c-bg: #fdfaf0;
-  --vp-c-bg-alt: #f6f1e4;
-  --vp-c-bg-soft: #f1eadb;
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-alt: #f6f6f7;
+  --vp-c-bg-soft: #f6f6f7;
   --vp-c-bg-elv: #ffffff;
-  --vp-c-divider: #e5dbce;
-  --vp-c-border: #e5dbce;
-  --vp-c-gutter: #ece4d6;
+  --vp-c-divider: #e2e2e3;
+  --vp-c-border: #e2e2e3;
+  --vp-c-gutter: #e2e2e3;
 
   --vp-c-text-1: #1a1d39;
   --vp-c-text-2: #4d5070;
