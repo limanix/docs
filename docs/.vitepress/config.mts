@@ -24,7 +24,7 @@ export default defineConfig({
     ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png', sizes: '96x96' }],
     ['link', { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }],
     ['meta', { name: 'theme-color', content: '#1b1b1f', media: '(prefers-color-scheme: dark)' }],
-    ['meta', { name: 'theme-color', content: '#fdfaf0', media: '(prefers-color-scheme: light)' }],
+    ['meta', { name: 'theme-color', content: '#ffffff', media: '(prefers-color-scheme: light)' }],
     ['meta', { name: 'robots', content: 'index, follow' }],
     ['meta', { name: 'author', content: 'LimaNix contributors' }],
     ['meta', { name: 'keywords', content: keywords }],
