@@ -12,7 +12,7 @@ updates:
       - deps
 
   - package-ecosystem: npm
-    directory: /site
+    directory: /app
     schedule:
       interval: weekly
     groups:

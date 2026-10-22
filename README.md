@@ -21,14 +21,14 @@ NixOS development machines on your Mac, declared in one file.
 
 | Path    | Contents                                  |
 | ------- | ----------------------------------------- |
-| `site/` | limanix.dev, a Vue app                    |
+| `app/`  | limanix.dev, a Vue app                    |
 | `docs/` | docs.limanix.dev, a VitePress site        |
 | `tf/`   | The hosting: S3 buckets behind CloudFront |
 
 Run a site locally with [Task](https://taskfile.dev) and Docker:
 
 ```console
-task run/site    # http://localhost:5173
+task run/app     # http://localhost:5173
 task run/docs    # http://localhost:5174
 ```
 

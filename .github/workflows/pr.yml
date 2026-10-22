@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [site, docs]
+        app: [app, docs]
     uses: mr-chelyshkin/actions/.github/workflows/ci-node.yml@v2
     permissions:
       contents: read
@@ -33,7 +33,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - app: site
+          - app: app
             state-key: ${{ vars.SITE_TF_STATE_KEY }}
             domain-name: ${{ vars.SITE_DOMAIN_NAME }}
             bucket-name: ${{ vars.SITE_BUCKET_NAME }}

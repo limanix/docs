@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        app: [site, docs]
+        app: [app, docs]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -58,7 +58,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - app: site
+          - app: app
             state-key: ${{ vars.SITE_TF_STATE_KEY }}
             domain-name: ${{ vars.SITE_DOMAIN_NAME }}
             bucket-name: ${{ vars.SITE_BUCKET_NAME }}

@@ -16,12 +16,12 @@ includes:
       NODE_VERSION: '22.23.1'
 
 tasks:
-  run/site:
-    desc: Run the site at http://localhost:5173
+  run/app:
+    desc: Run the app at http://localhost:5173
     cmds:
       - task: node:exec
         vars:
-          NODE_DIR: site
+          NODE_DIR: app
           CONTAINER_PORTS: "127.0.0.1:5173:5173"
           CMD: "sh -c 'npm install && exec ./node_modules/.bin/vite --host 0.0.0.0 --port 5173'"
 
@@ -39,7 +39,7 @@ tasks:
     requires: &app
       vars:
         - name: APP
-          enum: [site, docs]
+          enum: [app, docs]
     cmds:
       - task: node:exec
         vars:
