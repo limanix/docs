@@ -17,23 +17,7 @@ NixOS development machines on your Mac, declared in one file.
 [Modules](https://github.com/limanix/modules) |
 [lmx](https://github.com/limanix/lmx)
 
-## Development
-
-| Path    | Contents                                  |
-| ------- | ----------------------------------------- |
-| `app/`  | limanix.dev, a Vue app                    |
-| `docs/` | docs.limanix.dev, a VitePress site        |
-| `tf/`   | The hosting: S3 buckets behind CloudFront |
-
-Run a site locally with [Task](https://taskfile.dev) and Docker:
-
-```console
-task run/app     # http://localhost:5173
-task run/docs    # http://localhost:5174
-```
-
 ## Contributing
 
 Follow the
 [contribution guide](https://github.com/limanix/.github/blob/main/CONTRIBUTING.md).
-Licensed under [Apache 2.0](LICENSE).
