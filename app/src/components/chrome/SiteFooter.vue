@@ -10,10 +10,18 @@ const year = new Date().getFullYear()
   <footer class="site-footer">
     <div class="site-footer__bar o-bar">
       <div class="site-footer__top">
-        <a class="site-footer__brand" :href="links.home">
-          <img :src="llama" alt="" width="24" height="24" />
-          <span>{{ brand.name }}</span>
-        </a>
+        <div class="site-footer__credit">
+          <a class="site-footer__brand" :href="links.home">
+            <img :src="llama" alt="" width="24" height="24" />
+            <span>{{ brand.name }}</span>
+          </a>
+          <p class="site-footer__author">
+            {{ footer.author.prefix }}
+            <a class="site-footer__link" :href="footer.author.href" rel="author">{{
+              footer.author.label
+            }}</a>
+          </p>
+        </div>
         <nav class="site-footer__nav" aria-label="Footer">
           <a
             v-for="link in footer.links"

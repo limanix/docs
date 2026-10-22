@@ -27,6 +27,18 @@
     }
   }
 
+  .site-footer__credit {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+  }
+
+  .site-footer__author {
+    font-size: 0.875rem;
+    letter-spacing: 0;
+  }
+
   .site-footer__brand {
     display: inline-flex;
     align-items: center;
