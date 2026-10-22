@@ -1,0 +1,29 @@
+@use '../tools';
+
+@layer generic {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 72px;
+    background: var(--color-page);
+
+    @include tools.reduced-motion {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    min-height: 100vh;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    letter-spacing: var(--tracking-md);
+    color: var(--color-text);
+    background: var(--color-page);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: var(--color-selection);
+  }
+}

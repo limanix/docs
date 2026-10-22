@@ -1,0 +1,44 @@
+@use '../tools';
+
+@layer sections {
+  .hero {
+    padding-top: clamp(64px, 10vw, 104px);
+    text-align: center;
+  }
+
+  .hero__line {
+    display: block;
+  }
+
+  .hero__lead {
+    max-width: 768px;
+    margin: 20px auto 0;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    letter-spacing: var(--tracking-xl);
+    color: var(--color-lead);
+
+    @include tools.above(md) {
+      font-size: 1.5rem;
+      line-height: 2rem;
+      letter-spacing: var(--tracking-2xl);
+    }
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 16px;
+    margin-top: 32px;
+  }
+
+  .hero__stage {
+    margin-top: clamp(56px, 8vw, 96px);
+    padding: clamp(12px, 4vw, 40px);
+    border-radius: var(--radius-card);
+    text-align: left;
+    background: var(--gradient-wallpaper);
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 25%);
+  }
+}

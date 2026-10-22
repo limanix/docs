@@ -1,6 +1,7 @@
 locals {
-  cloudfront_name_prefix = "limanix-docs-${replace(var.domain_name, ".", "-")}"
-  cloudfront_origin_id   = "s3-${var.site_bucket_name}"
+  domain_labels        = split(".", var.domain_name)
+  name_prefix          = join("-", reverse(slice(local.domain_labels, 0, length(local.domain_labels) - 1)))
+  cloudfront_origin_id = "s3-${var.site_bucket_name}"
 
   content_security_policy = join("; ", [
     "default-src 'self'",
@@ -12,7 +13,7 @@ locals {
     "img-src 'self' data:",
     "media-src 'self'",
     "object-src 'none'",
-    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+    "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
   ])
 
@@ -20,5 +21,6 @@ locals {
     ManagedBy  = "Terraform"
     Project    = "limanix"
     Repository = "limanix/docs"
+    Site       = var.domain_name
   }
 }

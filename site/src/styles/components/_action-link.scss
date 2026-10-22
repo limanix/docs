@@ -1,0 +1,60 @@
+@layer components {
+  .c-action-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 9999px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition:
+      color var(--motion-fast) var(--ease-settle),
+      filter var(--motion-fast) var(--ease-settle);
+  }
+
+  .c-action-link--md {
+    padding: 8px 16px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .c-action-link--lg {
+    padding: 12px 20px;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    letter-spacing: var(--tracking-lg);
+  }
+
+  .c-action-link--primary {
+    color: var(--color-ink);
+    background: var(--gradient-action);
+
+    @media (hover: hover) {
+      &:hover {
+        filter: brightness(1.06);
+      }
+    }
+  }
+
+  .c-action-link--text {
+    color: var(--color-strong);
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--color-heading);
+      }
+    }
+  }
+
+  .c-action-link__arrow {
+    width: 20px;
+    height: 20px;
+    transition: translate var(--motion-fast) var(--ease-settle);
+  }
+
+  @media (hover: hover) {
+    .c-action-link:hover .c-action-link__arrow {
+      translate: 2px 0;
+    }
+  }
+}

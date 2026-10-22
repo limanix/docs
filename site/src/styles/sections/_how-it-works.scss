@@ -1,0 +1,293 @@
+@use '../tools';
+
+@layer sections {
+  .flow__commands {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .flow__command {
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.5rem;
+    letter-spacing: 0;
+    color: var(--color-strong);
+    background: var(--color-surface);
+    box-shadow: inset 0 0 0 1px var(--color-ring);
+    transition: box-shadow var(--motion-fast) var(--ease-settle);
+  }
+
+  .flow__command--active {
+    box-shadow: inset 0 0 0 2px var(--color-action-to);
+  }
+
+  .flow__caption {
+    max-width: 640px;
+    min-height: 3em;
+    margin: 16px auto 0;
+    text-align: center;
+  }
+
+  .flow__diagram {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 0.6fr) minmax(0, 1fr);
+    margin-top: 32px;
+
+    @include tools.below(md) {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  .flow__panel {
+    grid-row: 1 / -1;
+    border-radius: var(--radius-card);
+
+    @include tools.below(md) {
+      display: none;
+    }
+  }
+
+  .flow__panel--mac {
+    grid-column: 1;
+    background: var(--color-card);
+    box-shadow: inset 0 0 0 1px var(--color-ring);
+  }
+
+  .flow__panel--vm {
+    grid-column: 3;
+    background: var(--code-surface);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%);
+  }
+
+  .flow__side {
+    grid-row: 1;
+    z-index: 1;
+    padding: 20px 24px 4px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--color-muted);
+
+    @include tools.below(md) {
+      display: none;
+    }
+  }
+
+  .flow__side--mac {
+    grid-column: 1;
+  }
+
+  .flow__side--vm {
+    grid-column: 3;
+    color: var(--code-subtext);
+  }
+
+  .flow__cell {
+    z-index: 1;
+    display: grid;
+    align-content: center;
+    gap: 2px;
+    padding: 12px 24px;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    transition: opacity var(--motion-base) var(--ease-settle);
+
+    @include tools.below(md) {
+      padding: 14px 18px;
+      border-radius: 12px;
+    }
+  }
+
+  .flow__cell--mac {
+    grid-column: 1;
+
+    @include tools.below(md) {
+      background: var(--color-card);
+      box-shadow: inset 0 0 0 1px var(--color-ring);
+    }
+  }
+
+  .flow__cell--vm {
+    grid-column: 3;
+    color: var(--code-subtext);
+
+    @include tools.below(md) {
+      margin-bottom: 20px;
+      background: var(--code-surface);
+    }
+
+    .c-inline-code {
+      color: var(--code-text);
+      background: rgb(255 255 255 / 8%);
+      box-shadow: none;
+    }
+  }
+
+  .flow__where {
+    display: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--color-muted);
+
+    @include tools.below(md) {
+      display: block;
+    }
+  }
+
+  .flow__cell--vm .flow__where {
+    color: var(--code-muted);
+  }
+
+  .flow__name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-heading);
+
+    .c-inline-code {
+      padding: 0;
+      font-size: 0.95em;
+      color: inherit;
+      background: none;
+      box-shadow: none;
+    }
+  }
+
+  .flow__cell--vm .flow__name {
+    color: var(--code-text);
+  }
+
+  .flow__diagram--focused .flow__cell:not(.flow__cell--lit),
+  .flow__diagram--focused .flow__link:not(.flow__link--lit) {
+    opacity: 0.32;
+  }
+
+  .flow__link {
+    grid-column: 2;
+    z-index: 1;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    color: var(--color-muted);
+    transition: opacity var(--motion-base) var(--ease-settle);
+
+    @include tools.below(md) {
+      grid-template-columns: auto auto;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 0;
+    }
+  }
+
+  .flow__diagram--focused .flow__link--lit {
+    color: var(--color-action-to);
+  }
+
+  .flow__label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0;
+    white-space: nowrap;
+
+    @include tools.below(md) {
+      order: 1;
+    }
+  }
+
+  .flow__line {
+    --dash: 11px;
+    position: relative;
+    width: 100%;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px var(--dash));
+
+    @include tools.below(md) {
+      width: 2px;
+      height: 28px;
+      background: repeating-linear-gradient(
+        180deg,
+        currentColor 0 6px,
+        transparent 6px var(--dash)
+      );
+    }
+
+    &::before,
+    &::after {
+      position: absolute;
+      top: 50%;
+      width: 8px;
+      height: 8px;
+      border: solid currentColor;
+      border-width: 2px 2px 0 0;
+
+      @include tools.below(md) {
+        top: auto;
+        left: 50%;
+      }
+    }
+  }
+
+  .flow__link--right .flow__line::after,
+  .flow__link--both .flow__line::after {
+    content: '';
+    right: 0;
+    translate: 0 -50%;
+    rotate: 45deg;
+
+    @include tools.below(md) {
+      bottom: 0;
+      translate: -50% 0;
+      rotate: 135deg;
+    }
+  }
+
+  .flow__link--left .flow__line::before,
+  .flow__link--both .flow__line::before {
+    content: '';
+    left: 0;
+    translate: 0 -50%;
+    rotate: -135deg;
+
+    @include tools.below(md) {
+      top: 0;
+      left: 50%;
+      translate: -50% 0;
+      rotate: -45deg;
+    }
+  }
+
+  .flow__diagram--focused .flow__link--right.flow__link--lit .flow__line {
+    animation: flow-forward 0.8s linear infinite;
+  }
+
+  .flow__diagram--focused .flow__link--left.flow__link--lit .flow__line {
+    animation: flow-back 0.8s linear infinite;
+  }
+
+  @include tools.reduced-motion {
+    .flow__diagram--focused .flow__link--lit .flow__line {
+      animation: none;
+    }
+  }
+
+  @keyframes flow-forward {
+    to {
+      background-position: var(--dash) var(--dash);
+    }
+  }
+
+  @keyframes flow-back {
+    to {
+      background-position: calc(-1 * var(--dash)) calc(-1 * var(--dash));
+    }
+  }
+}

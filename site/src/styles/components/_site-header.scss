@@ -1,0 +1,72 @@
+@use '../tools';
+
+@layer components {
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-bottom: 1px solid transparent;
+    background: transparent;
+    backdrop-filter: blur(8px);
+    transition:
+      background-color var(--motion-fast) var(--ease-settle),
+      border-color var(--motion-fast) var(--ease-settle);
+  }
+
+  .site-header--scrolled {
+    border-bottom-color: var(--color-rule);
+    background-color: var(--color-header);
+  }
+
+  .site-header__bar {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    height: 56px;
+  }
+
+  .site-header__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    color: var(--color-heading);
+  }
+
+  .site-header__logo {
+    width: 24px;
+    height: 24px;
+  }
+
+  .site-header__nav {
+    display: flex;
+    gap: 32px;
+    margin-left: auto;
+
+    @include tools.below(md) {
+      display: none;
+    }
+  }
+
+  .site-header__link {
+    font-weight: 500;
+    color: var(--color-nav);
+    transition: color var(--motion-fast) var(--ease-settle);
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--color-heading);
+      }
+    }
+  }
+
+  .site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    @include tools.below(md) {
+      margin-left: auto;
+    }
+  }
+}

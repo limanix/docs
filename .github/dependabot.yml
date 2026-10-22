@@ -11,12 +11,22 @@ updates:
     labels:
       - deps
 
-  - package-ecosystem: uv
-    directory: /
+  - package-ecosystem: npm
+    directory: /site
     schedule:
       interval: weekly
     groups:
-      uv:
+      npm:
+        update-types: [minor, patch]
+    labels:
+      - deps
+
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: weekly
+    groups:
+      npm:
         update-types: [minor, patch]
     labels:
       - deps

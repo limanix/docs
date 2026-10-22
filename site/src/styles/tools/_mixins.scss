@@ -1,0 +1,25 @@
+@use 'sass:map';
+@use '../settings';
+
+@mixin below($name) {
+  @media (max-width: map.get(settings.$breakpoints, $name) - 0.01rem) {
+    @content;
+  }
+}
+
+@mixin above($name) {
+  @media (min-width: map.get(settings.$breakpoints, $name)) {
+    @content;
+  }
+}
+
+@mixin focus-ring {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}

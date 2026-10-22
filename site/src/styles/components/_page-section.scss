@@ -1,0 +1,33 @@
+@layer components {
+  .c-page-section {
+    padding-top: var(--section-space);
+  }
+
+  .c-page-section__head {
+    max-width: 768px;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .c-page-section__lead {
+    margin-top: 20px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    letter-spacing: var(--tracking-xl);
+  }
+
+  .c-page-section__body {
+    margin-top: clamp(40px, 5vw, 64px);
+  }
+
+  .c-page-section--compact .c-page-section__title {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    font-weight: 500;
+    line-height: 1.33;
+    letter-spacing: var(--tracking-2xl);
+  }
+
+  .c-page-section--compact .c-page-section__body {
+    margin-top: 32px;
+  }
+}

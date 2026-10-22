@@ -1,0 +1,50 @@
+@layer components {
+  .c-window {
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: var(--radius-window);
+    background: var(--code-surface);
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 50%);
+  }
+
+  .c-window__bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    border-bottom: 1px solid rgb(255 255 255 / 6%);
+    background: rgb(255 255 255 / 4%);
+  }
+
+  .c-window__lights {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    display: flex;
+    gap: 8px;
+    translate: 0 -50%;
+
+    > span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ff5f57;
+    }
+
+    > span:nth-child(2) {
+      background: #febc2e;
+    }
+
+    > span:nth-child(3) {
+      background: #28c840;
+    }
+  }
+
+  .c-window__title {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--code-subtext);
+  }
+}

@@ -1,0 +1,471 @@
+{
+  "brand": {
+    "name": "LimaNix",
+    "logoAlt": "LimaNix llama"
+  },
+  "links": {
+    "home": "/",
+    "download": "/download",
+    "guide": "https://docs.limanix.dev",
+    "docs": "https://docs.limanix.dev",
+    "github": "https://github.com/limanix",
+    "latest": "https://github.com/limanix/client/releases/latest",
+    "binaries": "https://github.com/limanix/client/releases/latest/download/"
+  },
+  "navigation": [
+    {
+      "label": "Features",
+      "href": "/#features"
+    },
+    {
+      "label": "How it works",
+      "href": "/#how-it-works"
+    },
+    {
+      "label": "Docs",
+      "href": "https://docs.limanix.dev"
+    },
+    {
+      "label": "GitHub",
+      "href": "https://github.com/limanix"
+    }
+  ],
+  "download": {
+    "label": "Download"
+  },
+  "theme": {
+    "key": "theme",
+    "light": "Switch to the light theme",
+    "dark": "Switch to the dark theme"
+  },
+  "home": {
+    "hero": {
+      "title": ["Linux dev machines,", "*declared in one file*", "on your Mac"],
+      "lead": "LimaNix runs NixOS virtual machines. Pick a shell, toolchains and services in `limanix.toml`, and LimaNix builds the machine and keeps it that way.",
+      "primary": "Download for macOS",
+      "secondary": "Read the guide"
+    },
+    "demo": {
+      "label": "Creating a VM from limanix.toml and opening a shell in it",
+      "replay": "Replay",
+      "file": "limanix.toml",
+      "directory": "~/projects/api",
+      "user": "dev",
+      "config": [
+        "name = \"api\"",
+        "",
+        "[shell]",
+        "preset = \"terminal\"",
+        "",
+        "[toolchains]",
+        "go = \"1.27\"",
+        "python = \"3.14\"",
+        "",
+        "[nixos]",
+        "modules = [\"lmx:docker\", \"lmx:postgres\"]",
+        "packages = [\"kubectl\"]",
+        "",
+        "[[mounts]]",
+        "source = \".\"",
+        "target = \"/workspace\""
+      ],
+      "commands": [
+        {
+          "input": "limanix create --config limanix.toml",
+          "output": ["Created api. Managed home: /Users/you/.limanix/api-4f1c2b9e7a30"]
+        },
+        {
+          "input": "limanix shell api",
+          "output": []
+        }
+      ],
+      "welcome": {
+        "mark": ["╲ ╲  ╱ ╱", " ╲ ╲╱ ╱", " ╱ ╱╲ ╲", "╱ ╱  ╲ ╲"],
+        "title": "LimaNix",
+        "links": ["https://github.com/limanix", "https://limanix.dev"],
+        "vm": "api",
+        "state": "ready",
+        "system": "NixOS 26.05, arm64",
+        "generation": "generation 3c41d0e, updated just now",
+        "facts": [
+          {
+            "term": "CPU",
+            "value": "4"
+          },
+          {
+            "term": "RAM",
+            "value": "7.7 GiB"
+          },
+          {
+            "term": "Uptime",
+            "value": "3 min"
+          },
+          {
+            "term": "Disk",
+            "value": "6 / 9 GiB free"
+          }
+        ],
+        "network": ["192.168.64.12", "TCP 22, 8080"],
+        "shared": [
+          {
+            "path": "/home/dev",
+            "mode": "rw"
+          },
+          {
+            "path": "/mnt/limanix",
+            "mode": "ro"
+          },
+          {
+            "path": "/workspace",
+            "mode": "rw"
+          }
+        ],
+        "modules": [
+          "cli-tools",
+          "zsh",
+          "lazygit",
+          "yazi",
+          "astronvim",
+          "tmux",
+          "go-1.27",
+          "python-3.14",
+          "docker",
+          "postgres"
+        ],
+        "hints": [
+          {
+            "command": "lmx help",
+            "action": "Explore commands"
+          },
+          {
+            "command": "nix profile add nixpkgs#ripgrep",
+            "action": "Install a package"
+          },
+          {
+            "command": "nix profile remove ripgrep",
+            "action": "Remove a package"
+          }
+        ]
+      }
+    },
+    "features": {
+      "id": "features",
+      "title": "Everything a project needs, nothing it does not",
+      "lead": "A few lines of `limanix.toml` turn into tools you use every day. Pick one to see the lines and what they give you.",
+      "items": [
+        {
+          "icon": "terminal",
+          "tone": "green",
+          "title": "A terminal that is ready",
+          "text": "Zsh with the Pure prompt, AstroNvim, tmux, Lazygit and Yazi, all in one theme.",
+          "window": "limanix.toml",
+          "code": [
+            "[shell]",
+            "preset = \"terminal\"",
+            "prompt = \"pure\"",
+            "editor = \"astronvim\"",
+            "multiplexer = \"tmux\""
+          ]
+        },
+        {
+          "icon": "braces",
+          "tone": "pink",
+          "title": "Your languages, wired in",
+          "text": "Go, Rust, Python and Node.js, each with its language server already connected to the editor.",
+          "window": "limanix.toml",
+          "code": [
+            "[toolchains]",
+            "go = \"1.27\"",
+            "rust = \"stable\"",
+            "python = \"3.14\"",
+            "nodejs = \"26\""
+          ]
+        },
+        {
+          "icon": "layers",
+          "tone": "sky",
+          "title": "Services and packages",
+          "text": "Docker, PostgreSQL and more from the catalog, plus any package from nixpkgs or nixos-unstable.",
+          "window": "limanix.toml",
+          "code": [
+            "[nixos]",
+            "modules = [\"lmx:docker\", \"lmx:postgres\"]",
+            "packages = [\"kubectl\", \"unstable:helix\"]"
+          ]
+        },
+        {
+          "icon": "folder",
+          "tone": "amber",
+          "title": "Your project, shared with the VM",
+          "text": "Code stays on the Mac and appears in the VM as you edit it. Share any folder, read-write or read-only.",
+          "window": "limanix.toml",
+          "code": [
+            "[[mounts]]",
+            "source = \".\"             # this project",
+            "target = \"/workspace\"",
+            "",
+            "[[mounts]]",
+            "source = \"../fixtures\"",
+            "target = \"/mnt/fixtures\"",
+            "mode = \"ro\"              # read-only in the VM"
+          ]
+        },
+        {
+          "icon": "sliders",
+          "tone": "purple",
+          "title": "Your dotfiles, in every VM",
+          "text": "Name the folder with your dotfiles once. Every new shell links them into the home, and edits on the Mac apply at once.",
+          "window": "limanix.toml",
+          "code": [
+            "[shell]",
+            "dotfiles = \"~/dotfiles\"",
+            "",
+            "# ~/dotfiles/.gitconfig    → ~/.gitconfig",
+            "# ~/dotfiles/.zshrc        → ~/.zshrc",
+            "# ~/dotfiles/.config/nvim  → ~/.config/nvim"
+          ]
+        },
+        {
+          "icon": "pulse",
+          "tone": "rose",
+          "title": "Answers inside the VM",
+          "text": "`lmx` shows how the VM is doing, what is wrong and what to do, and what each module can do.",
+          "window": "dev@api",
+          "code": [
+            "$ lmx status       # how the VM is doing",
+            "$ lmx doctor       # what is wrong, and the fix",
+            "$ lmx help docker  # commands and tasks of a module"
+          ]
+        }
+      ]
+    },
+    "howItWorks": {
+      "id": "how-it-works",
+      "title": "From a file to a *running machine*",
+      "lead": "`limanix` is the only thing you install on the Mac. It runs the VM with [Lima](https://lima-vm.io) built in, and `lmxd` inside the VM builds and checks its [NixOS](https://nixos.org) system. Pick a command to follow it through.",
+      "mac": "Your Mac",
+      "vm": "Linux VM",
+      "commandsLabel": "Follow a command",
+      "hint": "Pick a command to follow it through the diagram.",
+      "rows": [
+        {
+          "id": "config",
+          "mac": {
+            "name": "`limanix`",
+            "text": "Reads `limanix.toml` and prepares the inputs of the system from the catalog."
+          },
+          "link": {
+            "label": "inputs, read-only",
+            "direction": "right"
+          },
+          "vm": {
+            "name": "`lmxd`",
+            "text": "Builds the NixOS system from them."
+          }
+        },
+        {
+          "id": "vm",
+          "mac": {
+            "name": "Lima",
+            "text": "Built into `limanix`; runs the VM on Apple Virtualization."
+          },
+          "link": {
+            "label": "virtual machine",
+            "direction": "right"
+          },
+          "vm": {
+            "name": "NixOS",
+            "text": "Restarts into a new system only after it builds."
+          }
+        },
+        {
+          "id": "files",
+          "mac": {
+            "name": "Your folders",
+            "text": "The project, and the VM home kept under `~/.limanix`."
+          },
+          "link": {
+            "label": "shared, read-write",
+            "direction": "both"
+          },
+          "vm": {
+            "name": "`/workspace`, `/home/dev`",
+            "text": "The same files, seen from Linux."
+          }
+        },
+        {
+          "id": "shell",
+          "mac": {
+            "name": "Terminal",
+            "text": "`limanix shell api --session work`"
+          },
+          "link": {
+            "label": "SSH",
+            "direction": "right"
+          },
+          "vm": {
+            "name": "Zsh in tmux",
+            "text": "A session that keeps running after you disconnect."
+          }
+        },
+        {
+          "id": "clipboard",
+          "mac": {
+            "name": "Clipboard",
+            "text": "What you copy in the VM lands here."
+          },
+          "link": {
+            "label": "OSC 52",
+            "direction": "left"
+          },
+          "vm": {
+            "name": "`pbcopy`, `pbpaste`",
+            "text": "Directly or inside tmux."
+          }
+        },
+        {
+          "id": "status",
+          "mac": {
+            "name": "`limanix`",
+            "text": "Waits until the VM is ready; `limanix doctor` checks it later."
+          },
+          "link": {
+            "label": "status",
+            "direction": "left"
+          },
+          "vm": {
+            "name": "`lmxd`",
+            "text": "Checks the new system and reports when it is ready."
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "limanix create",
+          "rows": ["config", "vm", "files", "status"],
+          "text": "Prepares the inputs, starts a new VM with Lima and shares your folders. `lmxd` builds NixOS, the VM restarts into it, and `limanix` waits until it is ready."
+        },
+        {
+          "name": "limanix update",
+          "rows": ["config", "vm", "status"],
+          "text": "Prepares new inputs, and `lmxd` builds them while the VM keeps its current system. The VM restarts only when the build succeeds."
+        },
+        {
+          "name": "limanix shell",
+          "rows": ["files", "shell", "clipboard"],
+          "text": "Connects over SSH as the development user. With `--session`, tmux keeps the session running, and `pbcopy` reaches the Mac clipboard."
+        }
+      ]
+    },
+    "catalog": {
+      "id": "catalog",
+      "title": "A catalog that *fits together*",
+      "lead": "Shell components, toolchains and services share one theme and know about each other. Anything else comes from nixpkgs.",
+      "items": [
+        "Zsh",
+        "Oh My Zsh",
+        "Pure",
+        "Starship",
+        "AstroNvim",
+        "Neovim",
+        "tmux",
+        "Lazygit",
+        "Yazi",
+        "GitHub CLI",
+        "ripgrep",
+        "fd",
+        "fzf",
+        "bat",
+        "delta",
+        "jq",
+        "btop",
+        "Go",
+        "Rust",
+        "Python",
+        "Node.js",
+        "Docker",
+        "PostgreSQL",
+        "Google Cloud CLI",
+        "Claude Code",
+        "Posting",
+        "Harlequin",
+        "Any package from nixpkgs",
+        "Fresh releases from nixos-unstable"
+      ]
+    },
+    "faq": {
+      "id": "faq",
+      "title": "Frequently asked questions",
+      "items": [
+        {
+          "question": "Is LimaNix free?",
+          "answer": "Yes. LimaNix is open source under the Apache License 2.0."
+        },
+        {
+          "question": "Do I need to know Nix?",
+          "answer": "No. `limanix.toml` covers the shell, toolchains, modules and packages. When you need more, a NixOS module of your own plugs into the same VM."
+        },
+        {
+          "question": "How is it different from Lima?",
+          "answer": "LimaNix runs its VMs with Lima, built into the `limanix` binary. On top it adds a NixOS system built from your file, a catalog of modules that work together, and updates that build before the VM restarts."
+        },
+        {
+          "question": "Can I run containers?",
+          "answer": "Yes. Add `lmx:docker` to the modules, and Docker Engine with Compose runs inside the VM."
+        },
+        {
+          "question": "Which Macs does it support?",
+          "answer": "Apple Silicon and Intel Macs with macOS 26 or newer."
+        },
+        {
+          "question": "Where do my files live?",
+          "answer": "Project folders stay on your Mac and are shared into the VM. Your home inside the VM is kept on the Mac too, so it survives updates and is kept when you delete the VM."
+        }
+      ]
+    },
+    "closing": {
+      "title": "Your next Linux machine is one file away",
+      "primary": "Download for macOS"
+    }
+  },
+  "downloadPage": {
+    "title": "Download *LimaNix*",
+    "lead": "NixOS development machines on your Mac",
+    "action": "Download",
+    "binaries": [
+      {
+        "label": "Apple Silicon",
+        "asset": "limanix-arm64"
+      },
+      {
+        "label": "Intel",
+        "asset": "limanix-amd64"
+      }
+    ],
+    "guide": "Getting started",
+    "notes": "What's new"
+  },
+  "footer": {
+    "about": "Free and open source under the Apache License 2.0.",
+    "requirements": "For Apple Silicon and Intel Macs on macOS 26 or newer.",
+    "github": "LimaNix on GitHub",
+    "links": [
+      {
+        "label": "Download",
+        "href": "/download"
+      },
+      {
+        "label": "Docs",
+        "href": "https://docs.limanix.dev"
+      },
+      {
+        "label": "Releases",
+        "href": "https://github.com/limanix/client/releases"
+      },
+      {
+        "label": "Issues",
+        "href": "https://github.com/limanix/client/issues"
+      }
+    ]
+  }
+}

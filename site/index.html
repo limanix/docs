@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LimaNix | NixOS development machines on your Mac</title>
+    <meta
+      name="description"
+      content="LimaNix runs NixOS virtual machines on your Mac. Pick a shell, toolchains and services in one TOML file, and LimaNix builds the machine and keeps it that way."
+    />
+    <meta
+      name="keywords"
+      content="LimaNix, NixOS, Nix, Lima, macOS, Mac, Apple Silicon, virtual machine, Linux VM, development environment, declarative, reproducible, TOML"
+    />
+    <meta name="author" content="LimaNix contributors" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://limanix.dev/" />
+
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="96x96" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#1a1d2e" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fdfaf0" media="(prefers-color-scheme: light)" />
+    <script src="/theme.js"></script>
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="LimaNix" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://limanix.dev/" />
+    <meta property="og:title" content="LimaNix | NixOS development machines on your Mac" />
+    <meta
+      property="og:description"
+      content="LimaNix runs NixOS virtual machines on your Mac. Pick a shell, toolchains and services in one TOML file, and LimaNix builds the machine and keeps it that way."
+    />
+    <meta property="og:image" content="https://limanix.dev/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta
+      property="og:image:alt"
+      content="LimaNix: Linux dev machines, declared in one file on your Mac"
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="LimaNix | NixOS development machines on your Mac" />
+    <meta
+      name="twitter:description"
+      content="LimaNix runs NixOS virtual machines on your Mac. Pick a shell, toolchains and services in one TOML file, and LimaNix builds the machine and keeps it that way."
+    />
+    <meta name="twitter:image" content="https://limanix.dev/og-image.jpg" />
+    <meta
+      name="twitter:image:alt"
+      content="LimaNix: Linux dev machines, declared in one file on your Mac"
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "LimaNix",
+        "url": "https://limanix.dev/",
+        "description": "LimaNix runs NixOS virtual machines on your Mac. Pick a shell, toolchains and services in one TOML file, and LimaNix builds the machine and keeps it that way.",
+        "image": "https://limanix.dev/og-image.jpg",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "macOS 26 or later",
+        "downloadUrl": "https://limanix.dev/download",
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "sameAs": ["https://github.com/limanix"]
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

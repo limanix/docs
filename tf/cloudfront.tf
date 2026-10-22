@@ -1,5 +1,5 @@
 resource "aws_cloudfront_origin_access_control" "site" {
-  name                              = "${local.cloudfront_name_prefix}-oac"
+  name                              = "${local.name_prefix}-oac"
   description                       = "Private S3 origin access for ${var.domain_name}"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
@@ -7,7 +7,7 @@ resource "aws_cloudfront_origin_access_control" "site" {
 }
 
 resource "aws_cloudfront_cache_policy" "site" {
-  name        = "${local.cloudfront_name_prefix}-cache-v1"
+  name        = "${local.name_prefix}-cache"
   comment     = "Honor origin cache headers"
   max_ttl     = 31536000
   min_ttl     = 0
@@ -32,7 +32,7 @@ resource "aws_cloudfront_cache_policy" "site" {
 }
 
 resource "aws_cloudfront_response_headers_policy" "site" {
-  name    = "${local.cloudfront_name_prefix}-headers-v1"
+  name    = "${local.name_prefix}-headers"
   comment = "Security headers for ${var.domain_name}"
 
   security_headers_config {
@@ -90,8 +90,17 @@ resource "aws_cloudfront_response_headers_policy" "site" {
   }
 }
 
+resource "aws_cloudfront_function" "uri_rewrite" {
+  name    = "${local.name_prefix}-uri-rewrite"
+  comment = "Resolve site directory URLs to their S3 objects"
+  runtime = "cloudfront-js-2.0"
+
+  code    = file("${path.module}/functions/uri-rewrite.js")
+  publish = true
+}
+
 resource "aws_cloudfront_distribution" "site" {
-  comment             = "Limanix documentation"
+  comment             = "LimaNix ${var.domain_name}"
   price_class         = "PriceClass_100"
   default_root_object = "index.html"
   http_version        = "http2and3"
@@ -117,18 +126,22 @@ resource "aws_cloudfront_distribution" "site" {
 
     function_association {
       event_type   = "viewer-request"
-      function_arn = aws_cloudfront_function.docs_uri_rewrite.arn
+      function_arn = aws_cloudfront_function.uri_rewrite.arn
     }
   }
 
   custom_error_response {
     error_caching_min_ttl = 30
     error_code            = 403
+    response_code         = 404
+    response_page_path    = "/404.html"
   }
 
   custom_error_response {
     error_caching_min_ttl = 30
     error_code            = 404
+    response_code         = 404
+    response_page_path    = "/404.html"
   }
 
   restrictions {
@@ -142,13 +155,4 @@ resource "aws_cloudfront_distribution" "site" {
     minimum_protocol_version = "TLSv1.2_2021"
     ssl_support_method       = "sni-only"
   }
-}
-
-resource "aws_cloudfront_function" "docs_uri_rewrite" {
-  name    = "${local.cloudfront_name_prefix}-uri-rewrite"
-  comment = "Resolve limanix docs directory URLs to their S3 objects"
-  runtime = "cloudfront-js-2.0"
-
-  code    = file("${path.module}/functions/uri-rewrite.js")
-  publish = true
 }

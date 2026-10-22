@@ -1,32 +1,41 @@
-# Local environment
-.env
-.env.*
+# Operating systems
+.DS_Store
 
-# Python files
-__pycache__/
-/build/
-/.venv/
-
-# Task runner cache
-/.cache/
-/.task/
-
-# Terraform
-/tf/**/terraform.tfstate.d/
-/tf/**/.terraform/
-/tf/**/tfplan
-/tf/**/*.tfplan
-/tf/**/*.tfvars
-/tf/**/*.tfstate
-/tf/**/*.tfstate.*
-/tf/**/*.tfvars.json
-!/tf/**/*.tfvars.example
-!/tf/**/.terraform.lock.hcl
-/tf/**/.terraform.tfstate.lock.info
-
-# IDE
+# Editors
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
 
-# OS files
-.DS_Store
+# Logs and local environment
+*.log
+.env
+.env.*
+!.env.example
+
+# Task: remote Taskfiles and container caches
+/.task/
+/.cache/
+
+# Site
+/site/node_modules/
+/site/dist/
+/site/dist-ssr/
+/site/vite.config.ts.timestamp-*
+
+# Docs
+/docs/node_modules/
+/docs/.vitepress/cache/
+/docs/dist/
+
+# Terraform
+/tf/.terraform/
+/tf/.terraform.tfstate.lock.info
+/tf/*.tfstate
+/tf/*.tfstate.*
+/tf/*.tfplan
+/tf/tfplan
+/tf/*.tfvars
+/tf/*.tfvars.json
+!/tf/*.tfvars.example
