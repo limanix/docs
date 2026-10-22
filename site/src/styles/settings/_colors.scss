@@ -6,27 +6,27 @@ $color-amber: #fbbf24;
 $color-amber-deep: #f59e0b;
 
 $theme-dark: (
-  'page': #1a1d2e,
-  'heading': #ebe7dc,
-  'strong': #dcdfeb,
-  'text': #a7aec4,
-  'lead': #c0c5d6,
-  'nav': #c0c5d6,
-  'soft': #cbcfdd,
-  'muted': #858ca5,
-  'surface': #22263a,
-  'card': rgb(34 38 58 / 60%),
-  'ring': #313652,
-  'hover': rgb(142 161 255 / 10%),
-  'selected': rgb(142 161 255 / 15%),
-  'selected-ring': rgb(142 161 255 / 35%),
-  'rule': #272b41,
-  'header': rgb(26 29 46 / 72%),
-  'selection': rgb(74 100 255 / 40%),
+  'page': #000,
+  'heading': $color-wool,
+  'strong': #e4e7f2,
+  'text': #a9b0c6,
+  'lead': #c4c9da,
+  'nav': #c4c9da,
+  'soft': #d0d4e2,
+  'muted': #7d859f,
+  'surface': #0b0e1a,
+  'card': rgb(11 14 26 / 60%),
+  'ring': #1d2440,
+  'hover': rgb(142 161 255 / 8%),
+  'selected': rgb(142 161 255 / 12%),
+  'selected-ring': rgb(142 161 255 / 30%),
+  'rule': #0f1322,
+  'header': rgb(0 0 0 / 50%),
+  'selection': rgb(74 100 255 / 35%),
   'focus': #8ea1ff,
   'action-from': $color-amber,
   'action-to': $color-amber-deep,
-  'accent-from': #ebe7dc,
+  'accent-from': $color-wool,
   'accent-to': #8ea1ff,
   'string': #86efac,
   'wall': #22349b,
@@ -65,7 +65,7 @@ $theme-light: (
   'wall-deep': #6d7ed5,
 );
 
-$color-code-surface: #12141f;
+$color-code-surface: #0c0c0e;
 $color-code-text: #e4e4e7;
 $color-code-subtext: #a1a1aa;
 $color-code-muted: #71717a;
