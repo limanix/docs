@@ -19,10 +19,10 @@
 /.cache/
 
 # Site
-/site/node_modules/
-/site/dist/
-/site/dist-ssr/
-/site/vite.config.ts.timestamp-*
+/app/node_modules/
+/app/dist/
+/app/dist-ssr/
+/app/vite.config.ts.timestamp-*
 
 # Docs
 /docs/node_modules/
