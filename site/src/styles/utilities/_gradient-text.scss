@@ -1,0 +1,8 @@
+@layer utilities {
+  .u-gradient-text {
+    color: transparent;
+    background: var(--gradient-accent);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}

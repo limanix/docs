@@ -1,0 +1,101 @@
+name: Publish flow
+
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify ${{ github.ref_name }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check tag format
+        uses: mr-chelyshkin/actions/tag-format-check@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check that the tag is on main
+        uses: mr-chelyshkin/actions/tag-branch-check@v2
+        with:
+          branch: main
+
+  build:
+    name: Build ${{ matrix.app }} ${{ github.ref_name }}
+    needs: verify
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        app: [site, docs]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build ${{ matrix.app }}
+        uses: mr-chelyshkin/actions/task-run@v2
+        with:
+          task: ci/node/build
+          args: APP=${{ matrix.app }}
+      - name: Keep the build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: static-${{ matrix.app }}-${{ github.sha }}
+          path: ${{ matrix.app }}/dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    name: Deploy ${{ matrix.app }} ${{ github.ref_name }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: site
+            state-key: ${{ vars.SITE_TF_STATE_KEY }}
+            domain-name: ${{ vars.SITE_DOMAIN_NAME }}
+            bucket-name: ${{ vars.SITE_BUCKET_NAME }}
+            certificate-arn: ${{ vars.SITE_ACM_CERTIFICATE_ARN }}
+          - app: docs
+            state-key: ${{ vars.DOCS_TF_STATE_KEY }}
+            domain-name: ${{ vars.DOCS_DOMAIN_NAME }}
+            bucket-name: ${{ vars.DOCS_BUCKET_NAME }}
+            certificate-arn: ${{ vars.DOCS_ACM_CERTIFICATE_ARN }}
+    uses: mr-chelyshkin/actions/.github/workflows/cd-aws-s3-static.yml@v2
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      artifact-name: static-${{ matrix.app }}-${{ github.sha }}
+      working-directory: tf
+      aws-region: ${{ vars.AWS_REGION }}
+      terraform-state-bucket: ${{ vars.TF_STATE_BUCKET }}
+      terraform-state-key: ${{ matrix.state-key }}
+      terraform-state-region: ${{ vars.TF_STATE_REGION }}
+      aws-role-arn: ${{ vars.AWS_TERRAFORM_DEPLOY_ROLE_ARN }}
+      domain-name: ${{ matrix.domain-name }}
+      site-bucket-name: ${{ matrix.bucket-name }}
+      acm-certificate-arn: ${{ matrix.certificate-arn }}
+
+  publish:
+    name: Publish ${{ github.ref_name }}
+    needs: deploy
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true

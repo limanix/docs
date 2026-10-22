@@ -1,0 +1,69 @@
+@use '../settings';
+
+@mixin palette($theme) {
+  @each $name, $value in $theme {
+    --color-#{$name}: #{$value};
+  }
+}
+
+@mixin light {
+  color-scheme: light;
+
+  @include palette(settings.$theme-light);
+}
+
+:root {
+  --font-sans: #{settings.$font-sans};
+  --font-mono: #{settings.$font-mono};
+  --tracking-md: #{settings.$tracking-md};
+  --tracking-lg: #{settings.$tracking-lg};
+  --tracking-xl: #{settings.$tracking-xl};
+  --tracking-2xl: #{settings.$tracking-2xl};
+  --tracking-display: #{settings.$tracking-display};
+
+  color-scheme: dark;
+
+  @include palette(settings.$theme-dark);
+
+  --color-ink: #{settings.$color-ink};
+  --code-surface: #{settings.$color-code-surface};
+  --code-text: #{settings.$color-code-text};
+  --code-subtext: #{settings.$color-code-subtext};
+  --code-muted: #{settings.$color-code-muted};
+  --code-blue: #{settings.$color-code-blue};
+  --code-green: #{settings.$color-code-green};
+  --code-peach: #{settings.$color-code-peach};
+  --code-yellow: #{settings.$color-code-yellow};
+  --code-magenta: #{settings.$color-code-magenta};
+
+  --gradient-action: linear-gradient(
+    to bottom right,
+    var(--color-action-from),
+    var(--color-action-to)
+  );
+  --gradient-accent: linear-gradient(to right, var(--color-accent-from), var(--color-accent-to));
+  --gradient-wallpaper:
+    radial-gradient(120% 120% at 20% 185%, var(--color-wall-deep) 99.6%, transparent 100%),
+    radial-gradient(110% 125% at 80% 160%, var(--color-wall-wave) 99.6%, transparent 100%),
+    var(--color-wall);
+
+  --container-max: 1024px;
+  --container-gutter: 24px;
+  --section-space: clamp(80px, 10vw, 112px);
+  --radius-card: 16px;
+  --radius-window: 12px;
+
+  --motion-fast: 150ms;
+  --motion-base: 250ms;
+  --ease-settle: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    @include light;
+  }
+}
+
+:root[data-theme='light'] {
+  @include light;
+}

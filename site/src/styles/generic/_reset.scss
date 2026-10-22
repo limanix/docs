@@ -1,0 +1,26 @@
+@use '../tools';
+
+@layer generic {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  ul[class],
+  ol[class] {
+    list-style: none;
+  }
+
+  img,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  :focus-visible {
+    @include tools.focus-ring;
+  }
+}

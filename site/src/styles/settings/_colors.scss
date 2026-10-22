@@ -1,0 +1,76 @@
+$color-wool: #fdfaf0;
+$color-sand: #e5dbce;
+$color-ink: #1a1d39;
+
+$color-amber: #fbbf24;
+$color-amber-deep: #f59e0b;
+
+$theme-dark: (
+  'page': #1a1d2e,
+  'heading': #ebe7dc,
+  'strong': #dcdfeb,
+  'text': #a7aec4,
+  'lead': #c0c5d6,
+  'nav': #c0c5d6,
+  'soft': #cbcfdd,
+  'muted': #858ca5,
+  'surface': #22263a,
+  'card': rgb(34 38 58 / 60%),
+  'ring': #313652,
+  'hover': rgb(142 161 255 / 10%),
+  'selected': rgb(142 161 255 / 15%),
+  'selected-ring': rgb(142 161 255 / 35%),
+  'rule': #272b41,
+  'header': rgb(26 29 46 / 72%),
+  'selection': rgb(74 100 255 / 40%),
+  'focus': #8ea1ff,
+  'action-from': $color-amber,
+  'action-to': $color-amber-deep,
+  'accent-from': #ebe7dc,
+  'accent-to': #8ea1ff,
+  'string': #86efac,
+  'wall': #22349b,
+  'wall-wave': #203088,
+  'wall-deep': #1d2872,
+);
+
+// Light: the wool as the page, the llama's ink for text, and the logo's blues with less
+// saturation, which on a light page would glare.
+$theme-light: (
+  'page': $color-wool,
+  'heading': $color-ink,
+  'strong': $color-ink,
+  'text': #4d5070,
+  'lead': #3d4060,
+  'nav': #3d4060,
+  'soft': #2e3150,
+  'muted': #6b6e86,
+  'surface': #fff,
+  'card': #fff,
+  'ring': $color-sand,
+  'hover': rgb(61 81 194 / 6%),
+  'selected': rgb(61 81 194 / 10%),
+  'selected-ring': rgb(61 81 194 / 30%),
+  'rule': $color-sand,
+  'header': rgb(253 250 240 / 72%),
+  'selection': rgb(61 81 194 / 16%),
+  'focus': #3d51c2,
+  'action-from': $color-amber,
+  'action-to': $color-amber-deep,
+  'accent-from': $color-ink,
+  'accent-to': #3d51c2,
+  'string': #3d51c2,
+  'wall': #97a8ed,
+  'wall-wave': #8394e2,
+  'wall-deep': #6d7ed5,
+);
+
+$color-code-surface: #12141f;
+$color-code-text: #e4e4e7;
+$color-code-subtext: #a1a1aa;
+$color-code-muted: #71717a;
+$color-code-blue: #93c5fd;
+$color-code-green: #86efac;
+$color-code-peach: #fdba74;
+$color-code-yellow: #fcd34d;
+$color-code-magenta: #f0abfc;

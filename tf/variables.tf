@@ -5,7 +5,7 @@ variable "aws_region" {
 }
 
 variable "domain_name" {
-  description = "Hostname."
+  description = "Hostname of the site."
   type        = string
   nullable    = false
 }

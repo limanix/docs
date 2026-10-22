@@ -1,0 +1,13 @@
+@layer objects {
+  .o-app-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: clip;
+  }
+
+  .o-app-layout__main {
+    flex: 1 1 0%;
+    min-width: 0;
+  }
+}

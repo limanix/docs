@@ -1,0 +1,117 @@
+@layer components {
+  .c-demo {
+    --pane-pad: 20px;
+    --demo-leading: 1.42;
+    position: relative;
+    container-type: inline-size;
+  }
+
+  .c-demo__panes {
+    display: grid;
+    grid-template-columns: calc(44ch + 2 * var(--pane-pad)) minmax(0, 1fr);
+    font-family: var(--font-mono);
+    font-size: min(13px, (100cqi - 4 * var(--pane-pad) - 3px) / 75);
+    line-height: var(--demo-leading);
+    letter-spacing: 0;
+    color: var(--code-text);
+    white-space: pre;
+  }
+
+  .c-demo__editor {
+    padding: 14px var(--pane-pad) 18px;
+    border-right: 1px solid rgb(255 255 255 / 6%);
+    background: rgb(255 255 255 / 2%);
+  }
+
+  .c-demo__file {
+    margin-bottom: 10px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--code-subtext);
+  }
+
+  .c-demo__code {
+    counter-reset: line;
+
+    > li {
+      min-height: calc(var(--demo-leading) * 1em);
+    }
+
+    > li::before {
+      content: counter(line);
+      counter-increment: line;
+      display: inline-block;
+      width: 2ch;
+      margin-right: 2ch;
+      text-align: right;
+      color: var(--code-muted);
+    }
+  }
+
+  .c-demo__shell {
+    height: calc(var(--rows) * var(--demo-leading) * 1em + 32px);
+    padding: 16px var(--pane-pad);
+    overflow: hidden;
+  }
+
+  .c-demo__line {
+    min-height: calc(var(--demo-leading) * 1em);
+  }
+
+  .c-demo__cursor {
+    display: inline-block;
+    width: 1ch;
+    height: 1.2em;
+    vertical-align: -0.2em;
+    background: var(--code-text);
+  }
+
+  .c-demo__cursor--blink {
+    animation: c-demo-blink 1.1s steps(1, end) infinite;
+  }
+
+  .c-demo__replay {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 0 11px 0 0;
+    font-size: 0.8125rem;
+    letter-spacing: 0;
+    color: var(--code-subtext);
+    transition: color var(--motion-fast) var(--ease-settle);
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--code-text);
+      }
+    }
+  }
+
+  @container (width < 840px) {
+    .c-demo__panes {
+      grid-template-columns: minmax(0, 1fr);
+      font-size: min(13px, (100cqi - 2 * var(--pane-pad)) / 48.6);
+    }
+
+    .c-demo__editor {
+      border-right: 0;
+      border-bottom: 1px solid rgb(255 255 255 / 6%);
+      font-size: min(13px, (100cqi - 2 * var(--pane-pad)) / 26.6);
+    }
+  }
+
+  @container (width < 560px) {
+    .c-demo__panes {
+      --pane-pad: 12px;
+    }
+  }
+
+  @keyframes c-demo-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+}

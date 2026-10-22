@@ -1,15 +1,10 @@
 function handler(event) {
   const request = event.request;
-
-  if (request.uri === '/client/' || request.uri === '/client/index.html') {
-    return {
-      statusCode: 302,
-      statusDescription: 'Found',
-      headers: { location: { value: '/' } },
-    };
-  }
-  if (request.uri.endsWith('/')) {
-    request.uri += 'index.html';
+  const uri = request.uri;
+  if (uri.endsWith('/')) {
+    request.uri = uri + 'index.html';
+  } else if (!uri.slice(uri.lastIndexOf('/')).includes('.')) {
+    request.uri = uri + '.html';
   }
   return request;
 }

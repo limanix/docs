@@ -30,14 +30,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "site" {
   }
 }
 
-resource "aws_s3_bucket_versioning" "site" {
-  bucket = aws_s3_bucket.site.id
-
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
 resource "aws_s3_bucket_lifecycle_configuration" "site" {
   bucket = aws_s3_bucket.site.id
 
@@ -50,17 +42,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "site" {
     abort_incomplete_multipart_upload {
       days_after_initiation = 7
     }
-
-    noncurrent_version_expiration {
-      noncurrent_days = 30
-    }
-
-    expiration {
-      expired_object_delete_marker = true
-    }
   }
-
-  depends_on = [aws_s3_bucket_versioning.site]
 }
 
 data "aws_iam_policy_document" "site" {

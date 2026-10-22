@@ -1,0 +1,8 @@
+@layer utilities {
+  .u-instant,
+  .u-instant *,
+  .u-instant *::before,
+  .u-instant *::after {
+    transition: none !important;
+  }
+}

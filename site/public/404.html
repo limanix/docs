@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Page not found | LimaNix</title>
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="96x96" />
+    <meta name="theme-color" content="#1a1d2e" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fdfaf0" media="(prefers-color-scheme: light)" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --page: #1a1d2e;
+        --heading: #ebe7dc;
+        --text: #a7aec4;
+        --focus: #8ea1ff;
+        --action: linear-gradient(to bottom right, #fbbf24, #f59e0b);
+        background: var(--page);
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          color-scheme: light;
+          --page: #fdfaf0;
+          --heading: #1a1d39;
+          --text: #4d5070;
+          --focus: #3d51c2;
+          --action: linear-gradient(to bottom right, #fbbf24, #f59e0b);
+        }
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        min-height: 100svh;
+        padding: 24px;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        letter-spacing: -0.011em;
+        color: var(--text);
+        text-align: center;
+        background: var(--page);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      main {
+        max-width: 32rem;
+      }
+
+      h1 {
+        margin-bottom: 16px;
+        font-size: clamp(2.25rem, 7vw, 3.75rem);
+        font-weight: 700;
+        line-height: 1.125;
+        letter-spacing: -0.022em;
+        color: var(--heading);
+      }
+
+      p {
+        margin-bottom: 32px;
+        font-size: 1.25rem;
+        line-height: 1.75rem;
+      }
+
+      a {
+        display: inline-block;
+        padding: 12px 20px;
+        border-radius: 9999px;
+        font-size: 1.125rem;
+        font-weight: 500;
+        color: #1a1d39;
+        text-decoration: none;
+        background: var(--action);
+      }
+
+      a:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>This page is not here</h1>
+      <p>
+        The address may be old, or the page moved. Everything about LimaNix starts on the home page.
+      </p>
+      <a href="/">Go to the home page</a>
+    </main>
+  </body>
+</html>

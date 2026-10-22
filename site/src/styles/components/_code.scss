@@ -1,0 +1,74 @@
+@layer components {
+  .c-code__body {
+    display: block;
+    padding: 16px 20px 18px;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--code-text);
+    white-space: pre;
+  }
+
+  .c-code__line {
+    display: block;
+    min-height: 1.7em;
+  }
+
+  .c-inline-code {
+    padding: 0.1em 0.35em;
+    border-radius: 6px;
+    font-size: 0.875em;
+    color: var(--color-strong);
+    background: var(--color-surface);
+    box-shadow: inset 0 0 0 1px var(--color-ring);
+    white-space: nowrap;
+  }
+
+  .c-inline-link {
+    color: var(--color-strong);
+    text-decoration: underline;
+    text-decoration-color: var(--color-ring);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+    transition: text-decoration-color var(--motion-fast) var(--ease-settle);
+
+    @media (hover: hover) {
+      &:hover {
+        text-decoration-color: currentColor;
+      }
+    }
+  }
+
+  .c-paint--blue {
+    color: var(--code-blue);
+  }
+
+  .c-paint--green {
+    color: var(--code-green);
+  }
+
+  .c-paint--peach {
+    color: var(--code-peach);
+  }
+
+  .c-paint--yellow {
+    color: var(--code-yellow);
+  }
+
+  .c-paint--magenta {
+    color: var(--code-magenta);
+  }
+
+  .c-paint--muted {
+    color: var(--code-muted);
+  }
+
+  .c-paint--subtext {
+    color: var(--code-subtext);
+  }
+
+  .c-paint--bold {
+    font-weight: 700;
+    color: #fafafa;
+  }
+}

@@ -1,80 +1,62 @@
-# LimaNix
+---
+description: LimaNix runs NixOS development machines on your Mac, declared in one TOML file.
+---
 
-A Linux development workspace for your Mac, described beside your project.
+# What is LimaNix?
 
-Keep project files on macOS and run Linux tools, containers and services in a
-NixOS VM. LimaNix bundles Lima and a module catalog; your Mac does not need a
-separate Lima or Nix installation.
+LimaNix runs Linux development machines on your Mac. You describe a virtual machine in one file, `limanix.toml`, and the `limanix` command creates it: a NixOS system with your shell, languages, services and packages.
 
-## From project to workspace
+LimaNix is for developers on a Mac who want their tools and services to run on Linux while the editor and project files stay on the Mac. You don't need to know Nix, and you don't install Lima or Nix on the Mac.
 
-```mermaid
-flowchart LR
-    project["Project files on Mac"] --> mount["Shared /workspace"]
-    toml["limanix.toml"] --> client["LimaNix client"]
-    client --> vm["NixOS VM"]
-    mount --> vm
-    catalog["Selected catalog modules"] --> vm
-    vm --> tools["Editor, shell, Git, containers and services"]
+## Why LimaNix
+
+### One file declares the whole machine
+
+`limanix.toml` lives beside your project and describes the VM: its resources, account, shared folders, environment, firewall ports, shell, toolchains, modules and packages. A few lines choose the tools:
+
+::: code-group
+
+```toml [limanix.toml]
+[shell]
+preset = "terminal"
+
+[toolchains]
+go = "1.27"
+python = "3.14"
+
+[nixos]
+modules = ["lmx:docker", "lmx:postgres"]
+packages = ["kubectl"]
 ```
 
-| Start with | What you get | Guide |
-| -- | -- | -- |
-| Minimal VM | A consistent platform account, shell, mounts and guest interface | [Getting started](https://limanix.dev/categories/client/getting-started.html) |
-| Cozy workbench | Named project windows, common languages and LSP, containers, cloud clients, HTTP and SQL tools | [Project workspace](https://limanix.dev/categories/client/workspace.html) |
-| Your own selection | Independent modules and project-specific NixOS configuration | [Catalog](https://limanix.dev/categories/nixos/catalog.html) |
+:::
 
-The shared platform works with any module selection. Optional modules add
-capabilities through documented settings and interfaces. Cozy assembles those
-components into one workbench; each remains available separately.
+### NixOS builds before the VM restarts
 
-## Try it
+`limanix update` builds the new system inside the VM and restarts the VM only when the build succeeds. When a build fails, the VM keeps the system it had. After the restart, LimaNix checks the new system before it removes the old one.
 
-1. [Install the client](https://limanix.dev/categories/client/getting-started.html#install-the-client)
-   matching your Mac.
-1. Save a project configuration and run `limanix create --config limanix.toml`
-   on the Mac.
-1. Open the guest with `limanix shell NAME` and run project commands at its
-   mounted Linux path.
+### A catalog of modules that fit together
 
-Creation needs network access for image and package downloads. An update
-rebuilds the guest and restarts the VM. The managed home and project mounts keep
-their host files; the guest disk has its own lifecycle. Read
-[Storage and data](https://limanix.dev/categories/client/virtual-machines.html#storage-and-data)
-before deleting a VM.
+Shell components, toolchains and services come from a catalog bundled with the client. They share one theme and know about each other: each toolchain connects its language server to the editor. Anything else comes from nixpkgs, and a NixOS module of your own plugs into the same system.
 
-## Understand and extend it
+### Tools inside the VM
 
-| Need | Read |
-| -- | -- |
-| VM resources, mounts and environment | [Configuration](https://limanix.dev/categories/client/configuration.html) |
-| Guest service access from the Mac | [Networking](https://limanix.dev/categories/client/networking.html) |
-| Copy and paste between the Mac and the VM | [Terminal and clipboard](terminal.md) |
-| Component responsibilities and public contracts | [Architecture](https://limanix.dev/categories/client/architecture.html) |
-| What runs inside the VM: status, updates, disk upkeep and diagnostics | [lmx](https://limanix.dev/categories/lmx/index.html) |
-| A tool the catalog does not cover | [Write a module](https://limanix.dev/categories/nixos/writing-modules.html) |
-| Exact flags and configuration fields | [Reference](https://limanix.dev/categories/client/reference.html) |
-| Alternative workflows and trade-offs | [How LimaNix compares](comparison.md) |
+Every VM comes with `lmx`. It greets you with a welcome when you open a shell, `lmx status` and `lmx doctor` show how the VM is doing and what to fix, and `lmx help` explains what each module gives you. `pbcopy` and `pbpaste` reach the Mac clipboard.
 
-## Project repositories
+### Your Mac stays in charge of files
 
-| Repository | Owns |
-| -- | -- |
-| [Client](https://github.com/limanix/client) | CLI, VM platform, lifecycle and configuration delivery |
-| [Modules](https://github.com/limanix/modules) | Guest tools, application settings, capability providers and integrations |
-| [lmx](https://github.com/limanix/lmx) | The guest owner: commands inside the VM, updates, store upkeep and diagnostics |
-| [Documentation](https://github.com/limanix/docs) | Shared pages, site theme, navigation and publication |
+Project folders you share stay on the Mac and appear in the VM as you edit them. Your home inside the VM is kept on the Mac too, under `~/.limanix` by default: it survives updates and stays when you delete the VM.
 
-The [release process](releases/index.md) explains which client/catalog pairs are
-published and how their documentation reaches this site.
+## What's in the box
 
-```{toctree}
-:hidden:
-:maxdepth: 2
-:caption: Project
-:glob:
+- [`limanix`](/vms/): one binary for the Mac, with Lima built in, that creates, updates, starts, stops and deletes VMs and opens a shell in them.
+- [Shell](/config/shell): Zsh with Oh My Zsh and the Pure prompt, AstroNvim, tmux, Lazygit, Yazi and the GitHub CLI, or Bash with the command-line tools.
+- [Toolchains](/config/toolchains): Go, Rust, Python and Node.js, each with its language server.
+- [Modules](/modules/): Docker, PostgreSQL, Google Cloud CLI, Claude Code, Posting and Harlequin.
+- [Packages](/config/modules#install-packages): any command from nixpkgs, or a newer release from nixos-unstable.
+- [Shared folders](/config/mounts) and [dotfiles](/config/dotfiles): your project and your settings from the Mac, in every VM.
+- [`lmx`](/inside/lmx): status, checks and help inside the VM.
+- [Clipboard](/inside/clipboard): `pbcopy` and `pbpaste` to the Mac clipboard, also inside tmux.
+- [Network](/vms/network): reach services at the VM's address, and check why a port does not answer.
 
-comparison
-terminal
-**/index
-```
+To try it, follow the [Quick start](/quick-start).

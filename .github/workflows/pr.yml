@@ -13,129 +13,61 @@ permissions:
   contents: read
 
 jobs:
-  markdown:
-    name: Markdown formatting
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: mr-chelyshkin/actions/task-run@v2
-        with:
-          task: ci/markdown/fmt
-
-  plan:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    outputs:
-      infrastructure: ${{ steps.paths.outputs.infrastructure }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Select infrastructure plan
-        id: paths
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.sha }}
-        run: |
-          status=0
-          git --no-optional-locks diff --quiet "$BASE_SHA" "$HEAD_SHA" -- tf/ Taskfile.yml .github/workflows/ || status=$?
-          case "$status" in
-            0) printf 'infrastructure=false\n' >> "$GITHUB_OUTPUT" ;;
-            1) printf 'infrastructure=true\n' >> "$GITHUB_OUTPUT" ;;
-            *) exit "$status" ;;
-          esac
-
-  terraform-ci:
-    name: ${{ matrix.task }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
+  node:
+    name: node (${{ matrix.app }})
     strategy:
       fail-fast: false
       matrix:
-        task: [ci/terraform/fmt, ci/terraform/validate]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Restore provider cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache/terraform
-          key: terraform-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tf/.terraform.lock.hcl') }}
-      - uses: mr-chelyshkin/actions/task-run@v2
-        with:
-          task: ${{ matrix.task }}
+        app: [site, docs]
+    uses: mr-chelyshkin/actions/.github/workflows/ci-node.yml@v2
+    permissions:
+      contents: read
+    with:
+      env-vars: '{"APP": "${{ matrix.app }}"}'
+      cache-key-prefix: node-${{ matrix.app }}
+      cache-dependency-path: ${{ matrix.app }}/package-lock.json
 
-  terraform-plan:
-    needs: plan
-    if: ${{ needs.plan.outputs.infrastructure == 'true' && github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
+  terraform:
+    name: terraform (${{ matrix.app }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: site
+            state-key: ${{ vars.SITE_TF_STATE_KEY }}
+            domain-name: ${{ vars.SITE_DOMAIN_NAME }}
+            bucket-name: ${{ vars.SITE_BUCKET_NAME }}
+            certificate-arn: ${{ vars.SITE_ACM_CERTIFICATE_ARN }}
+          - app: docs
+            state-key: ${{ vars.DOCS_TF_STATE_KEY }}
+            domain-name: ${{ vars.DOCS_DOMAIN_NAME }}
+            bucket-name: ${{ vars.DOCS_BUCKET_NAME }}
+            certificate-arn: ${{ vars.DOCS_ACM_CERTIFICATE_ARN }}
+    uses: mr-chelyshkin/actions/.github/workflows/ci-terraform.yml@v2
     permissions:
       contents: read
       id-token: write
-    env:
-      TF_STATE_KEY: ${{ vars.TF_STATE_KEY }}
-      TF_STATE_REGION: ${{ vars.TF_STATE_REGION }}
-      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
-      TF_VAR_aws_region: ${{ vars.AWS_REGION }}
-      TF_VAR_domain_name: ${{ vars.SITE_DOMAIN_NAME }}
-      TF_VAR_site_bucket_name: ${{ vars.SITE_BUCKET_NAME }}
-      TF_VAR_acm_certificate_arn: ${{ vars.SITE_ACM_CERTIFICATE_ARN }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Restore provider cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache/terraform
-          key: terraform-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tf/.terraform.lock.hcl') }}
-      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
-        with:
-          role-to-assume: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-      - name: Plan infrastructure
-        timeout-minutes: 15
-        uses: mr-chelyshkin/actions/task-run@v2
-        with:
-          task: ci/terraform/plan
-
-  static-ci:
-    name: ${{ matrix.task }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        task: [ci/static/test, ci/static/audit, ci/static/build]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Restore documentation dependency cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache/python
-          key: docs-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.task }}-${{ hashFiles('uv.lock') }}-${{ github.sha }}
-          restore-keys: |
-            docs-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.task }}-${{ hashFiles('uv.lock') }}-
-            docs-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.task }}-
-      - uses: mr-chelyshkin/actions/task-run@v2
-        with:
-          task: ${{ matrix.task }}
+    with:
+      aws-role-arn: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
+      aws-region: ${{ vars.AWS_REGION }}
+      env-vars: |
+        {
+          "TF_STATE_KEY": ${{ toJSON(matrix.state-key) }},
+          "TF_VAR_aws_region": ${{ toJSON(vars.AWS_REGION) }},
+          "TF_STATE_REGION": ${{ toJSON(vars.TF_STATE_REGION) }},
+          "TF_STATE_BUCKET": ${{ toJSON(vars.TF_STATE_BUCKET) }},
+          "TF_VAR_domain_name": ${{ toJSON(matrix.domain-name) }},
+          "TF_VAR_site_bucket_name": ${{ toJSON(matrix.bucket-name) }},
+          "TF_VAR_acm_certificate_arn": ${{ toJSON(matrix.certificate-arn) }}
+        }
 
   gate:
     if: always()
-    needs: [markdown, plan, terraform-ci, terraform-plan, static-ci]
+    needs: [node, terraform]
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
       - uses: mr-chelyshkin/actions/job-results-check@v2
         with:
           results: ${{ toJSON(needs) }}
-          skipped: ${{ needs.plan.result == 'success' && (needs.plan.outputs.infrastructure == 'false' || github.event.pull_request.head.repo.full_name != github.repository) && 'terraform-plan' || '' }}

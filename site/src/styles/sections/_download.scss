@@ -1,0 +1,58 @@
+@layer sections {
+  .download {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: clamp(64px, 10vw, 104px);
+    text-align: center;
+  }
+
+  .download__lead {
+    margin-top: 16px;
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+    line-height: 1.33;
+    letter-spacing: var(--tracking-2xl);
+    color: var(--color-lead);
+  }
+
+  .download__binaries {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    margin-top: clamp(40px, 6vw, 64px);
+  }
+
+  .download__binary {
+    padding-inline: 40px;
+  }
+
+  .download__label {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .download__platform {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    letter-spacing: 0;
+    color: rgb(26 29 57 / 72%);
+  }
+
+  .download__guide {
+    margin-top: 20px;
+  }
+
+  .download__notes {
+    margin-top: 12px;
+    font-weight: 500;
+    color: var(--color-muted);
+    transition: color var(--motion-fast) var(--ease-settle);
+
+    @media (hover: hover) {
+      &:hover {
+        color: var(--color-heading);
+      }
+    }
+  }
+}
