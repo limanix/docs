@@ -37,8 +37,7 @@ export function useTheme() {
     }
     try {
       localStorage.setItem(KEY, next)
-    } catch {
-    }
+    } catch {}
   }
 
   return { theme, toggle }
